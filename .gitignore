@@ -36,9 +36,18 @@ frontend/yarn-error.log*
 # Kubernetes
 *.kubeconfig
 
-# Test reports
+# Test reports (all timestamped directories)
 test/all-interface-test/20*/
 test/pressure/20*/
+test/selenium-calculate/*_20*.json
+test/selenium-calculate/*_20*.md
+
+# Large files and archives
+*.zip
+*.tar
+*.tar.gz
+*.rar
+*.7z
 
 # Sensitive files
 *.env
@@ -51,3 +60,13 @@ secrets.yaml
 *.tmp
 *.bak
 *.swp
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Claude settings
+.claude/
