@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir D:\\\\java\\\\claude\\\\projects\\\\1\\\\新需求\\\\monitoring:*)"
+    ]
+  }
+}

@@ -1,0 +1,124 @@
+groups:
+  - name: backend_alerts
+    interval: 30s
+    rules:
+      # CPU 告警
+      - alert: HighCPUUsage
+        expr: process_cpu_usage{job="burndown-backend"} > 0.8
+        for: 5m
+        labels:
+          severity: high
+          component: backend
+        annotations:
+          summary: "后端服务 CPU 使用率过高"
+          description: "实例 {{ $labels.instance }} CPU 使用率为 {{ $value | humanizePercentage }}，持续超过 5 分钟"
+
+      # 内存告警
+      - alert: HighMemoryUsage
+        expr: (jvm_memory_used_bytes{area="heap",job="burndown-backend"} / jvm_memory_max_bytes{area="heap",job="burndown-backend"}) > 0.85
+        for: 5m
+        labels:
+          severity: high
+          component: backend
+        annotations:
+          summary: "后端服务内存使用率过高"
+          description: "实例 {{ $labels.instance }} 堆内存使用率为 {{ $value | humanizePercentage }}，持续超过 5 分钟"
+
+      # Full GC 频繁告警
+      - alert: FrequentFullGC
+        expr: rate(jvm_gc_pause_seconds_count{action="end of major GC",job="burndown-backend"}[10m]) > 0.1
+        for: 10m
+        labels:
+          severity: high
+          component: backend
+        annotations:
+          summary: "Full GC 过于频繁"
+          description: "实例 {{ $labels.instance }} 在过去 10 分钟内 Full GC 频率为 {{ $value | humanize }} 次/秒"
+
+      # GC 耗时过长告警
+      - alert: LongGCPause
+        expr: rate(jvm_gc_pause_seconds_sum{job="burndown-backend"}[5m]) / rate(jvm_gc_pause_seconds_count{job="burndown-backend"}[5m]) > 1
+        for: 5m
+        labels:
+          severity: medium
+          component: backend
+        annotations:
+          summary: "GC 暂停时间过长"
+          description: "实例 {{ $labels.instance }} 平均 GC 暂停时间为 {{ $value | humanizeDuration }}，持续超过 5 分钟"
+
+      # 错误率告警
+      - alert: HighErrorRate
+        expr: (sum(rate(http_server_requests_seconds_count{status=~"5..",job="burndown-backend"}[3m])) by (instance) / sum(rate(http_server_requests_seconds_count{job="burndown-backend"}[3m])) by (instance)) > 0.05
+        for: 3m
+        labels:
+          severity: high
+          component: backend
+        annotations:
+          summary: "后端服务错误率过高"
+          description: "实例 {{ $labels.instance }} 5xx 错误率为 {{ $value | humanizePercentage }}，持续超过 3 分钟"
+
+      # 响应时间过慢告警
+      - alert: SlowResponseTime
+        expr: histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{job="burndown-backend"}[5m])) by (le, instance)) > 2
+        for: 5m
+        labels:
+          severity: medium
+          component: backend
+        annotations:
+          summary: "后端服务响应时间过慢"
+          description: "实例 {{ $labels.instance }} P95 响应时间为 {{ $value | humanizeDuration }}，持续超过 5 分钟"
+
+      # QPS 突增告警
+      - alert: HighRequestRate
+        expr: sum(rate(http_server_requests_seconds_count{job="burndown-backend"}[3m])) by (instance) > 1000
+        for: 3m
+        labels:
+          severity: medium
+          component: backend
+        annotations:
+          summary: "请求量突增"
+          description: "实例 {{ $labels.instance }} QPS 为 {{ $value | humanize }}，持续超过 3 分钟"
+
+      # 线程数过多告警
+      - alert: HighThreadCount
+        expr: jvm_threads_live_threads{job="burndown-backend"} > 500
+        for: 5m
+        labels:
+          severity: medium
+          component: backend
+        annotations:
+          summary: "线程数过多"
+          description: "实例 {{ $labels.instance }} 活跃线程数为 {{ $value }}，持续超过 5 分钟"
+
+      # 数据库连接池告警
+      - alert: HighDatabaseConnectionUsage
+        expr: (hikaricp_connections_active{job="burndown-backend"} / hikaricp_connections_max{job="burndown-backend"}) > 0.8
+        for: 5m
+        labels:
+          severity: medium
+          component: backend
+        annotations:
+          summary: "数据库连接池使用率过高"
+          description: "实例 {{ $labels.instance }} 数据库连接池使用率为 {{ $value | humanizePercentage }}，持续超过 5 分钟"
+
+      # 服务不可用告警
+      - alert: ServiceDown
+        expr: up{job="burndown-backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: backend
+        annotations:
+          summary: "后端服务不可用"
+          description: "实例 {{ $labels.instance }} 无法访问，持续超过 1 分钟"
+
+      # 堆外内存告警
+      - alert: HighNonHeapMemory
+        expr: (jvm_memory_used_bytes{area="nonheap",job="burndown-backend"} / jvm_memory_max_bytes{area="nonheap",job="burndown-backend"}) > 0.9
+        for: 5m
+        labels:
+          severity: medium
+          component: backend
+        annotations:
+          summary: "堆外内存使用率过高"
+          description: "实例 {{ $labels.instance }} 堆外内存使用率为 {{ $value | humanizePercentage }}，持续超过 5 分钟"

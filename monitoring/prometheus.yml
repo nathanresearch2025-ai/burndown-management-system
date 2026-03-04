@@ -1,0 +1,66 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'k8s-cluster'
+    environment: 'production'
+
+# Alertmanager 配置
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - alertmanager:9093
+
+# 告警规则文件
+rule_files:
+  - '/etc/prometheus/alert_rules.yml'
+
+# 抓取配置
+scrape_configs:
+  # Prometheus 自身监控
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Java 后端服务监控
+  - job_name: 'burndown-backend'
+    metrics_path: '/api/v1/actuator/prometheus'
+    scrape_interval: 15s
+    scrape_timeout: 10s
+    kubernetes_sd_configs:
+      - role: pod
+        namespaces:
+          names:
+            - default
+    relabel_configs:
+      # 只抓取带有特定标签的 Pod
+      - source_labels: [__meta_kubernetes_pod_label_app]
+        action: keep
+        regex: burndown-backend
+      # 使用 Pod IP 作为目标
+      - source_labels: [__meta_kubernetes_pod_ip]
+        action: replace
+        target_label: __address__
+        replacement: $1:8080
+      # 添加实例标签
+      - source_labels: [__meta_kubernetes_pod_name]
+        action: replace
+        target_label: instance
+      # 添加命名空间标签
+      - source_labels: [__meta_kubernetes_namespace]
+        action: replace
+        target_label: namespace
+      # 添加 Pod 名称标签
+      - source_labels: [__meta_kubernetes_pod_name]
+        action: replace
+        target_label: pod
+
+  # 如果使用静态配置（非 K8s 环境）
+  # - job_name: 'burndown-backend-static'
+  #   metrics_path: '/api/v1/actuator/prometheus'
+  #   static_configs:
+  #     - targets: ['backend-service:8080']
+  #       labels:
+  #         app: 'burndown-backend'
+  #         environment: 'production'

@@ -1,0 +1,61 @@
+groups:
+  - name: burndown-backend-alerts
+    rules:
+      - alert: BackendHighCPU
+        expr: process_cpu_usage * 100 > 80
+        for: 5m
+        labels:
+          severity: critical
+          service: burndown-backend
+        annotations:
+          summary: "Backend CPU usage is high"
+          description: "CPU usage has been above 80% for 5 minutes."
+
+      - alert: BackendHighMemory
+        expr: (jvm_memory_used_bytes{area="heap"} / jvm_memory_max_bytes{area="heap"}) * 100 > 85
+        for: 5m
+        labels:
+          severity: critical
+          service: burndown-backend
+        annotations:
+          summary: "Heap memory usage is high"
+          description: "Heap usage has been above 85% for 5 minutes."
+
+      - alert: BackendHighErrorRate
+        expr: |
+          (
+            sum(rate(http_server_requests_seconds_count{status=~"5.."}[3m]))
+            /
+            sum(rate(http_server_requests_seconds_count[3m]))
+          ) * 100 > 5
+        for: 3m
+        labels:
+          severity: critical
+          service: burndown-backend
+        annotations:
+          summary: "5xx error rate is high"
+          description: "HTTP 5xx ratio has been above 5% for 3 minutes."
+
+      - alert: BackendHighLatencyP95
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum(rate(http_server_requests_seconds_bucket[5m])) by (le)
+          ) > 2
+        for: 5m
+        labels:
+          severity: warning
+          service: burndown-backend
+        annotations:
+          summary: "P95 latency is high"
+          description: "HTTP P95 latency has been above 2 seconds for 5 minutes."
+
+      - alert: BackendFrequentFullGC
+        expr: increase(jvm_gc_pause_seconds_count{action="end of major GC"}[10m]) > 3
+        for: 10m
+        labels:
+          severity: critical
+          service: burndown-backend
+        annotations:
+          summary: "Frequent Full GC"
+          description: "Major GC count exceeded threshold in the last 10 minutes."

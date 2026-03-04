@@ -1,0 +1,53 @@
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Backend (Java/Maven)
+backend/target/
+backend/.mvn/
+backend/mvnw
+backend/mvnw.cmd
+*.class
+*.jar
+*.war
+*.ear
+*.log
+
+# Frontend (Node.js)
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+frontend/.env.local
+frontend/.env.*.local
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+
+# Docker
+*.log
+
+# Kubernetes
+*.kubeconfig
+
+# Test reports
+test/all-interface-test/20*/
+test/pressure/20*/
+
+# Sensitive files
+*.env
+*.pem
+*.key
+credentials.json
+secrets.yaml
+
+# Temporary files
+*.tmp
+*.bak
+*.swp

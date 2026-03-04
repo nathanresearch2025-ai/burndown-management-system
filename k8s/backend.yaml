@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: burndown-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: burndown-backend
+  template:
+    metadata:
+      labels:
+        app: burndown-backend
+    spec:
+      hostNetwork: true
+      containers:
+      - name: burndown-backend
+        image: burndown-backend:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+        env:
+        - name: SPRING_DATASOURCE_URL
+          value: jdbc:postgresql://159.75.202.106:30432/burndown_db
+        - name: SPRING_DATASOURCE_USERNAME
+          value: postgres
+        - name: SPRING_DATASOURCE_PASSWORD
+          value: root
+        - name: SPRING_DATA_REDIS_HOST
+          value: 159.75.202.106
+        - name: SPRING_DATA_REDIS_PORT
+          value: "30379"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: burndown-backend
+spec:
+  selector:
+    app: burndown-backend
+  ports:
+  - port: 8080
+    targetPort: 8080
+    nodePort: 30080
+  type: NodePort
