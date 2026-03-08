@@ -61,8 +61,8 @@ ai:
   timeout: 30s
   max-similar-tasks: 5
   rate-limit:
-    max-requests-per-user: 10
-    window-minutes: 60
+    max-requests-per-user: 50
+    window-minutes: 10
 
 springdoc:
   api-docs:
