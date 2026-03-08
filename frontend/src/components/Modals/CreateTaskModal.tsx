@@ -1,10 +1,11 @@
-import { Modal, Form, Input, InputNumber, Select, message } from 'antd';
+import { Modal, Form, Input, InputNumber, Select, message, Button, Space, Typography } from 'antd';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-import { createTask } from '../../api/task';
+import { createTask, taskApi, SimilarTaskReference } from '../../api/task';
 import { getProjects } from '../../api/project';
 import { getSprints } from '../../api/sprint';
 import { getUsers } from '../../api/user';
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface CreateTaskModalProps {
   visible: boolean;
@@ -21,8 +22,10 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
 }) => {
   const [form] = Form.useForm();
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
   const [selectedProjectId, setSelectedProjectId] = useState<number | undefined>(projectId);
   const [selectedSprintId, setSelectedSprintId] = useState<number | undefined>(sprintId);
+  const [similarTasks, setSimilarTasks] = useState<SimilarTaskReference[]>([]);
 
   const { data: projects } = useQuery({
     queryKey: ['projects'],
@@ -53,13 +56,26 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
   const createMutation = useMutation({
     mutationFn: (data: any) => createTask(selectedSprintId!, data),
     onSuccess: () => {
-      message.success('任务创建成功');
+      message.success(t('task.createSuccess'));
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       form.resetFields();
+      setSimilarTasks([]);
       onClose();
     },
     onError: () => {
-      message.error('任务创建失败');
+      message.error(t('task.createFailed'));
+    },
+  });
+
+  const generateDescriptionMutation = useMutation({
+    mutationFn: (data: Parameters<typeof taskApi.generateDescription>[0]) => taskApi.generateDescription(data),
+    onSuccess: (response) => {
+      form.setFieldValue('description', response.data.description);
+      setSimilarTasks(response.data.similarTasks || []);
+      message.success(t('task.ai.generateSuccess'));
+    },
+    onError: (error: any) => {
+      message.error(error?.response?.data?.message || t('task.ai.generateFailed'));
     },
   });
 
@@ -68,7 +84,7 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
       const values = await form.validateFields();
 
       if (!selectedSprintId) {
-        message.warning('请先选择Sprint');
+        message.warning(t('task.ai.sprintRequired'));
         return;
       }
 
@@ -78,14 +94,36 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
     }
   };
 
+  const handleGenerateDescription = async () => {
+    const values = form.getFieldsValue();
+    const currentProjectId = values.projectId ?? selectedProjectId ?? projectId;
+
+    if (!currentProjectId || !values.title || !values.type) {
+      message.warning(t('task.ai.missingRequiredFields'));
+      return;
+    }
+
+    generateDescriptionMutation.mutate({
+      projectId: currentProjectId,
+      sprintId: values.sprintId ?? selectedSprintId,
+      title: values.title,
+      type: values.type,
+      priority: values.priority,
+      storyPoints: values.storyPoints,
+      originalEstimate: values.originalEstimate,
+      assigneeId: values.assigneeId,
+    });
+  };
+
   const handleCancel = () => {
     form.resetFields();
+    setSimilarTasks([]);
     onClose();
   };
 
   return (
     <Modal
-      title="创建任务"
+      title={t('task.create')}
       open={visible}
       onOk={handleCreate}
       onCancel={handleCancel}
@@ -97,11 +135,11 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
         {!projectId && (
           <Form.Item
             name="projectId"
-            label="所属项目"
-            rules={[{ required: true, message: '请选择项目' }]}
+            label={t('task.project')}
+            rules={[{ required: true, message: t('task.projectRequired') }]}
           >
             <Select
-              placeholder="选择项目"
+              placeholder={t('task.projectPlaceholder')}
               onChange={(value) => {
                 setSelectedProjectId(value);
                 setSelectedSprintId(undefined);
@@ -119,11 +157,11 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
         {!sprintId && (
           <Form.Item
             name="sprintId"
-            label="所属Sprint"
-            rules={[{ required: true, message: '请选择Sprint' }]}
+            label={t('task.sprint')}
+            rules={[{ required: true, message: t('task.sprintRequired') }]}
           >
             <Select
-              placeholder={selectedProjectId ? '选择Sprint' : '请先选择项目'}
+              placeholder={selectedProjectId ? t('task.sprintPlaceholder') : t('task.sprintSelectProjectFirst')}
               disabled={!selectedProjectId}
               onChange={(value) => setSelectedSprintId(value)}
             >
@@ -137,44 +175,59 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
         )}
         <Form.Item
           name="title"
-          label="任务标题"
-          rules={[{ required: true, message: '请输入任务标题' }]}
+          label={t('task.titleLabel')}
+          rules={[{ required: true, message: t('task.titleRequired') }]}
         >
-          <Input placeholder="输入任务标题" />
+          <Input placeholder={t('task.titlePlaceholder')} />
         </Form.Item>
-        <Form.Item name="description" label="任务描述">
-          <Input.TextArea rows={4} placeholder="输入任务描述（可选）" />
+        <Form.Item name="description" label={t('task.description')}>
+          <Space direction="vertical" style={{ width: '100%' }} size={8}>
+            <Button
+              onClick={handleGenerateDescription}
+              loading={generateDescriptionMutation.isPending}
+            >
+              {t('task.ai.generateButton')}
+            </Button>
+            <Input.TextArea rows={4} placeholder={t('task.descriptionPlaceholder')} />
+            {similarTasks.length > 0 && (
+              <Typography.Text type="secondary">
+                {t('task.ai.similarTasksHint', {
+                  tasks: similarTasks.map((task) => `${task.taskKey} ${task.title}`).join('；'),
+                })}
+              </Typography.Text>
+            )}
+          </Space>
         </Form.Item>
         <Form.Item
           name="type"
-          label="任务类型"
-          rules={[{ required: true, message: '请选择任务类型' }]}
+          label={t('task.type')}
+          rules={[{ required: true, message: t('task.typeRequired') }]}
           initialValue="TASK"
         >
           <Select>
-            <Select.Option value="STORY">故事</Select.Option>
-            <Select.Option value="TASK">任务</Select.Option>
-            <Select.Option value="BUG">缺陷</Select.Option>
-            <Select.Option value="EPIC">史诗</Select.Option>
+            <Select.Option value="STORY">{t('task.story')}</Select.Option>
+            <Select.Option value="TASK">{t('task.taskType')}</Select.Option>
+            <Select.Option value="BUG">{t('task.bug')}</Select.Option>
+            <Select.Option value="EPIC">{t('task.epic')}</Select.Option>
           </Select>
         </Form.Item>
-        <Form.Item name="priority" label="优先级" initialValue="MEDIUM">
+        <Form.Item name="priority" label={t('task.priority')} initialValue="MEDIUM">
           <Select>
-            <Select.Option value="CRITICAL">紧急</Select.Option>
-            <Select.Option value="HIGH">高</Select.Option>
-            <Select.Option value="MEDIUM">中</Select.Option>
-            <Select.Option value="LOW">低</Select.Option>
+            <Select.Option value="CRITICAL">{t('task.highest')}</Select.Option>
+            <Select.Option value="HIGH">{t('task.high')}</Select.Option>
+            <Select.Option value="MEDIUM">{t('task.medium')}</Select.Option>
+            <Select.Option value="LOW">{t('task.low')}</Select.Option>
           </Select>
         </Form.Item>
-        <Form.Item name="storyPoints" label="故事点">
-          <InputNumber min={0} style={{ width: '100%' }} placeholder="输入故事点" />
+        <Form.Item name="storyPoints" label={t('task.storyPoints')}>
+          <InputNumber min={0} style={{ width: '100%' }} placeholder={t('task.storyPointsPlaceholder')} />
         </Form.Item>
-        <Form.Item name="originalEstimate" label="预估工时（小时）">
-          <InputNumber min={0} style={{ width: '100%' }} placeholder="输入预估工时" />
+        <Form.Item name="originalEstimate" label={t('task.estimatedHours')}>
+          <InputNumber min={0} style={{ width: '100%' }} placeholder={t('task.estimatedHoursPlaceholder')} />
         </Form.Item>
-        <Form.Item name="assigneeId" label="指派给">
+        <Form.Item name="assigneeId" label={t('task.assignee')}>
           <Select
-            placeholder="选择指派人员"
+            placeholder={t('task.assigneePlaceholder')}
             allowClear
             showSearch
             optionFilterProp="children"

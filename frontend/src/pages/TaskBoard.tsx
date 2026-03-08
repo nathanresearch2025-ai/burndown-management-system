@@ -3,12 +3,13 @@ import { Button, Card, Modal, Form, Input, Select, InputNumber, message, Row, Co
 import { ArrowLeftOutlined, ClockCircleOutlined, HistoryOutlined } from '@ant-design/icons'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useParams, useNavigate } from 'react-router-dom'
-import { taskApi, CreateTaskRequest, Task } from '../api/task'
+import { taskApi, CreateTaskRequest, Task, SimilarTaskReference } from '../api/task'
 import { workLogApi, LogWorkRequest } from '../api/worklog'
 import { sprintApi } from '../api/sprint'
 import { getUsers } from '../api/user'
 import MainLayout from '../components/Layout/MainLayout'
 import dayjs from 'dayjs'
+import { useTranslation } from 'react-i18next'
 
 const { Title } = Typography
 
@@ -19,10 +20,12 @@ const TaskBoard: React.FC = () => {
   const [isWorkLogHistoryModalOpen, setIsWorkLogHistoryModalOpen] = useState(false)
   const [editingTask, setEditingTask] = useState<Task | null>(null)
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
+  const [, setSimilarTasks] = useState<SimilarTaskReference[]>([])
   const [form] = Form.useForm()
   const [workLogForm] = Form.useForm()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const { t } = useTranslation()
 
   const { data: sprint } = useQuery({
     queryKey: ['sprint', sprintId],
@@ -58,27 +61,29 @@ const TaskBoard: React.FC = () => {
   const createMutation = useMutation({
     mutationFn: (data: CreateTaskRequest) => taskApi.create(data),
     onSuccess: () => {
-      message.success('任务创建成功')
+      message.success(t('task.createSuccess'))
       setIsModalOpen(false)
       form.resetFields()
+      setSimilarTasks([])
       queryClient.invalidateQueries({ queryKey: ['tasks', sprintId] })
     },
     onError: () => {
-      message.error('任务创建失败')
+      message.error(t('task.createFailed'))
     },
   })
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: CreateTaskRequest }) => taskApi.update(id, data),
     onSuccess: () => {
-      message.success('任务更新成功')
+      message.success(t('task.updateSuccess'))
       setIsModalOpen(false)
       setEditingTask(null)
       form.resetFields()
+      setSimilarTasks([])
       queryClient.invalidateQueries({ queryKey: ['tasks', sprintId] })
     },
     onError: () => {
-      message.error('任务更新失败')
+      message.error(t('task.updateFailed'))
     },
   })
 

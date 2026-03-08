@@ -27,6 +27,11 @@ public class CacheConfig {
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
         objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        // 启用类型信息以正确反序列化
+        objectMapper.activateDefaultTyping(
+            objectMapper.getPolymorphicTypeValidator(),
+            ObjectMapper.DefaultTyping.NON_FINAL
+        );
 
         GenericJackson2JsonRedisSerializer serializer = new GenericJackson2JsonRedisSerializer(objectMapper);
 
@@ -51,6 +56,9 @@ public class CacheConfig {
 
         // 用户信息缓存 - 15分钟
         cacheConfigurations.put("users", config.entryTtl(Duration.ofMinutes(15)));
+
+        // AI 任务描述生成缓存 - 24小时
+        cacheConfigurations.put("aiTaskGeneration", config.entryTtl(Duration.ofHours(24)));
 
         return RedisCacheManager.builder(connectionFactory)
             .cacheDefaults(config)

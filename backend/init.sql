@@ -9,6 +9,7 @@ DROP TABLE IF EXISTS permissions CASCADE;
 DROP TABLE IF EXISTS roles CASCADE;
 DROP TABLE IF EXISTS burndown_points CASCADE;
 DROP TABLE IF EXISTS work_logs CASCADE;
+DROP TABLE IF EXISTS ai_task_generation_logs CASCADE;
 DROP TABLE IF EXISTS tasks CASCADE;
 DROP TABLE IF EXISTS sprints CASCADE;
 DROP TABLE IF EXISTS projects CASCADE;
@@ -142,6 +143,28 @@ CREATE TABLE work_logs (
 CREATE INDEX idx_work_logs_task_id ON work_logs(task_id);
 CREATE INDEX idx_work_logs_user_id ON work_logs(user_id);
 CREATE INDEX idx_work_logs_work_date ON work_logs(work_date);
+
+-- AI task generation logs table
+CREATE TABLE ai_task_generation_logs (
+                                       id BIGSERIAL PRIMARY KEY,
+                                       project_id BIGINT NOT NULL,
+                                       user_id BIGINT NOT NULL,
+                                       title VARCHAR(500) NOT NULL,
+                                       request_payload JSONB NOT NULL,
+                                       response_description TEXT,
+                                       similar_task_ids JSONB,
+                                       is_accepted BOOLEAN,
+                                       feedback_rating INTEGER CHECK (feedback_rating >= 1 AND feedback_rating <= 5),
+                                       feedback_comment TEXT,
+                                       created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                       CONSTRAINT fk_ai_task_generation_logs_project FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+                                       CONSTRAINT fk_ai_task_generation_logs_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_ai_task_generation_logs_project_id ON ai_task_generation_logs(project_id);
+CREATE INDEX idx_ai_task_generation_logs_user_id ON ai_task_generation_logs(user_id);
+CREATE INDEX idx_ai_task_generation_logs_created_at ON ai_task_generation_logs(created_at);
+CREATE INDEX idx_ai_task_generation_logs_is_accepted ON ai_task_generation_logs(is_accepted);
 
 -- Burndown points table
 CREATE TABLE burndown_points (

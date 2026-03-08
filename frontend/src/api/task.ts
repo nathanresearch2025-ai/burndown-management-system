@@ -31,6 +31,31 @@ export interface CreateTaskRequest {
   assigneeId?: number
 }
 
+export interface GenerateTaskDescriptionRequest {
+  projectId: number
+  sprintId?: number
+  title: string
+  type: string
+  priority?: string
+  storyPoints?: number
+  originalEstimate?: number
+  assigneeId?: number
+}
+
+export interface SimilarTaskReference {
+  id: number
+  taskKey: string
+  title: string
+  similarity: number
+}
+
+export interface GenerateTaskDescriptionResponse {
+  description: string
+  similarTasks: SimilarTaskReference[]
+  generatedBy: string
+  generatedAt: string
+}
+
 export const taskApi = {
   getBySprint: (sprintId: number) => api.get<Task[]>(`/tasks/sprint/${sprintId}`),
   getByProject: (projectId: number) => api.get<Task[]>(`/tasks/project/${projectId}`),
@@ -38,6 +63,8 @@ export const taskApi = {
   create: (data: CreateTaskRequest) => api.post<Task>('/tasks', data),
   update: (id: number, data: CreateTaskRequest) => api.put<Task>(`/tasks/${id}`, data),
   updateStatus: (id: number, status: string) => api.patch<Task>(`/tasks/${id}/status?status=${status}`),
+  generateDescription: (data: GenerateTaskDescriptionRequest) =>
+    api.post<GenerateTaskDescriptionResponse>('/tasks/ai/generate-description', data),
 }
 
 export const createTask = async (sprintId: number, data: Omit<CreateTaskRequest, 'sprintId'>) => {
