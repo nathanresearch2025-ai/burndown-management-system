@@ -1,0 +1,237 @@
+{
+	"info": {
+		"_postman_id": "ai-agent-standup-collection",
+		"name": "Burndown Management - AI Agent & Auth",
+		"description": "Burndown Management System API Collection - 包含登录认证和 AI Agent 站会助手接口",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "burndown-api"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// 自动保存 token 到环境变量",
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.token) {",
+									"        pm.environment.set(\"jwt_token\", jsonData.token);",
+									"        console.log(\"Token saved: \" + jsonData.token);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"admin\",\n    \"password\": \"admin123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "用户登录接口\n\n**请求参数：**\n- username: 用户名（必填）\n- password: 密码（必填）\n\n**响应：**\n- token: JWT 认证令牌\n- user: 用户信息\n\n**默认测试账号：**\n- 用户名: admin\n- 密码: admin123"
+					},
+					"response": []
+				}
+			],
+			"description": "用户认证相关接口"
+		},
+		{
+			"name": "AI Agent - Standup Assistant",
+			"item": [
+				{
+					"name": "Standup Query - 我今天有哪些任务",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}",
+								"description": "JWT 认证令牌"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"question\": \"我今天有哪些任务在进行中？\",\n    \"projectId\": 1,\n    \"sprintId\": 1,\n    \"timezone\": \"Asia/Shanghai\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/agent/standup/query",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"agent",
+								"standup",
+								"query"
+							]
+						},
+						"description": "站会问答 - 查询进行中的任务\n\n**功能说明：**\n- AI Agent 会自动调用 `getInProgressTasks` 工具查询任务数据\n- 返回用户当前进行中的任务列表\n\n**请求参数：**\n- question: 用户的问题（必填）\n- projectId: 项目ID（必填）\n- sprintId: Sprint ID（可选）\n- timezone: 时区（默认 Asia/Shanghai）\n\n**响应：**\n- answer: AI 生成的回答\n- summary: 摘要信息\n- toolsUsed: 使用的工具列表\n- evidence: 证据数据"
+					},
+					"response": []
+				},
+				{
+					"name": "Standup Query - Sprint 燃尽图分析",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}",
+								"description": "JWT 认证令牌"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"question\": \"当前 Sprint 的燃尽图情况如何？有风险吗？\",\n    \"projectId\": 1,\n    \"sprintId\": 1,\n    \"timezone\": \"Asia/Shanghai\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/agent/standup/query",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"agent",
+								"standup",
+								"query"
+							]
+						},
+						"description": "站会问答 - 燃尽图分析和风险评估\n\n**功能说明：**\n- AI Agent 会自动调用 `getSprintBurndown` 工具获取燃尽图数据\n- AI Agent 会自动调用 `evaluateBurndownRisk` 工具评估风险\n- 返回燃尽图分析和风险评估结果\n\n**AI 会分析：**\n- Sprint 进度是否正常\n- 剩余工作量趋势\n- 是否存在延期风险\n- 给出改进建议"
+					},
+					"response": []
+				},
+				{
+					"name": "Standup Query - 团队整体进展",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}",
+								"description": "JWT 认证令牌"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"question\": \"帮我总结一下团队今天的整体进展情况\",\n    \"projectId\": 1,\n    \"sprintId\": 1,\n    \"timezone\": \"Asia/Shanghai\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/agent/standup/query",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"agent",
+								"standup",
+								"query"
+							]
+						},
+						"description": "站会问答 - 团队整体进展总结\n\n**功能说明：**\n- AI Agent 会综合调用多个工具获取数据\n- 生成团队整体进展报告\n\n**AI 会分析：**\n- 任务完成情况\n- 燃尽图趋势\n- 潜在风险\n- 团队效率"
+					},
+					"response": []
+				},
+				{
+					"name": "Standup Query - 自定义问题",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}",
+								"description": "JWT 认证令牌"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"question\": \"你的问题写在这里\",\n    \"projectId\": 1,\n    \"sprintId\": 1,\n    \"timezone\": \"Asia/Shanghai\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/agent/standup/query",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"agent",
+								"standup",
+								"query"
+							]
+						},
+						"description": "站会问答 - 自定义问题模板\n\n**使用说明：**\n1. 修改 question 字段为你的问题\n2. 设置正确的 projectId 和 sprintId\n3. 发送请求\n\n**支持的问题类型：**\n- 任务查询：\"我有哪些任务？\"、\"高优先级任务有哪些？\"\n- 进度查询：\"Sprint 进度如何？\"、\"还剩多少工作量？\"\n- 风险评估：\"有什么风险？\"、\"能按时完成吗？\"\n- 数据分析：\"燃尽图趋势如何？\"、\"团队效率怎么样？\""
+					},
+					"response": []
+				}
+			],
+			"description": "AI Agent 站会助手接口\n\n**功能概述：**\n- 基于 Spring AI 框架实现的智能站会助手\n- 支持自然语言问答\n- 自动调用工具函数获取数据（Function Calling）\n- 提供任务查询、燃尽图分析、风险评估等功能\n\n**可用工具：**\n1. getInProgressTasks - 获取进行中的任务\n2. getSprintBurndown - 获取 Sprint 燃尽图数据\n3. evaluateBurndownRisk - 评估燃尽图风险"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8080/api/v1",
+			"type": "string"
+		},
+		{
+			"key": "jwt_token",
+			"value": "",
+			"type": "string"
+		}
+	]
+}
