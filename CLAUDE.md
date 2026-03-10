@@ -346,3 +346,5 @@ POST /api/v1/tasks/ai/generate-description
 - 每一句prompt后面都自动补充多一句 "持续监控，一步步显示"
 
 我的需求文档在这个目录下 /myapp/docs
+
+后端代码的目录在D:\java\claude\projects\2\backend\下
