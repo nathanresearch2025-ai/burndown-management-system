@@ -1,5 +1,6 @@
 package com.burndown.entity;
 
+import com.pgvector.PGvector;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -76,6 +77,9 @@ public class Task {
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "custom_fields", columnDefinition = "jsonb")
     private String customFields = "{}";
+
+    @Column(name = "embedding", columnDefinition = "vector(1536)")
+    private PGvector embedding;
 
     @CreatedDate
     @Column(name = "created_at", updatable = false)

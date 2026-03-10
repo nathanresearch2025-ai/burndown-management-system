@@ -2,7 +2,13 @@
 -- Burndown Management System - Complete Database Initialization
 -- =============================================
 
+-- Enable pgvector extension for vector similarity search
+CREATE EXTENSION IF NOT EXISTS vector;
+
 -- Drop existing tables if they exist (in reverse order of dependencies)
+DROP TABLE IF EXISTS agent_tool_call_log CASCADE;
+DROP TABLE IF EXISTS agent_chat_message CASCADE;
+DROP TABLE IF EXISTS agent_chat_session CASCADE;
 DROP TABLE IF EXISTS role_permissions CASCADE;
 DROP TABLE IF EXISTS user_roles CASCADE;
 DROP TABLE IF EXISTS permissions CASCADE;
@@ -107,6 +113,7 @@ CREATE TABLE tasks (
                        reporter_id BIGINT NOT NULL,
                        labels TEXT[],
                        custom_fields JSONB DEFAULT '{}'::jsonb,
+                       embedding vector(1536),
                        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                        resolved_at TIMESTAMP,
@@ -123,6 +130,7 @@ CREATE INDEX idx_tasks_sprint_id ON tasks(sprint_id);
 CREATE INDEX idx_tasks_assignee_id ON tasks(assignee_id);
 CREATE INDEX idx_tasks_status ON tasks(status);
 CREATE INDEX idx_tasks_task_key ON tasks(task_key);
+CREATE INDEX idx_tasks_embedding ON tasks USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
 
 -- Work logs table
 CREATE TABLE work_logs (
@@ -478,7 +486,66 @@ INSERT INTO burndown_points (sprint_id, point_date, actual_remaining, ideal_rema
                                                                                               ((SELECT id FROM sprints WHERE name = 'Sprint 2 - 订单服务'), '2024-01-19', 18, 15, NOW());
 
 -- =============================================
--- 5. Completion Summary
+-- 5. Agent Audit Tables
+-- =============================================
+
+-- Agent chat session table
+CREATE TABLE agent_chat_session (
+    id BIGSERIAL PRIMARY KEY,
+    session_key VARCHAR(64) UNIQUE NOT NULL,
+    user_id BIGINT NOT NULL,
+    project_id BIGINT,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_agent_session_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_agent_session_project FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE SET NULL
+);
+
+CREATE INDEX idx_agent_session_user_id ON agent_chat_session(user_id);
+CREATE INDEX idx_agent_session_project_id ON agent_chat_session(project_id);
+CREATE INDEX idx_agent_session_key ON agent_chat_session(session_key);
+
+-- Agent chat message table
+CREATE TABLE agent_chat_message (
+    id BIGSERIAL PRIMARY KEY,
+    session_id BIGINT NOT NULL,
+    role VARCHAR(20) NOT NULL,
+    question TEXT,
+    answer TEXT,
+    intent VARCHAR(50),
+    tools_used JSONB,
+    risk_level VARCHAR(20),
+    trace_id VARCHAR(64),
+    latency_ms INT,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_agent_message_session FOREIGN KEY (session_id) REFERENCES agent_chat_session(id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_agent_message_session_id ON agent_chat_message(session_id);
+CREATE INDEX idx_agent_message_trace_id ON agent_chat_message(trace_id);
+CREATE INDEX idx_agent_message_created_at ON agent_chat_message(created_at);
+
+-- Agent tool call log table
+CREATE TABLE agent_tool_call_log (
+    id BIGSERIAL PRIMARY KEY,
+    message_id BIGINT NOT NULL,
+    tool_name VARCHAR(64) NOT NULL,
+    input_payload JSONB,
+    output_payload JSONB,
+    status VARCHAR(20) NOT NULL,
+    error_code VARCHAR(50),
+    duration_ms INT,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_agent_tool_message FOREIGN KEY (message_id) REFERENCES agent_chat_message(id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_agent_tool_message_id ON agent_tool_call_log(message_id);
+CREATE INDEX idx_agent_tool_name ON agent_tool_call_log(tool_name);
+CREATE INDEX idx_agent_tool_status ON agent_tool_call_log(status);
+CREATE INDEX idx_agent_tool_created_at ON agent_tool_call_log(created_at);
+
+-- =============================================
+-- 6. Completion Summary
 -- =============================================
 
 SELECT 'Database initialization completed successfully!' AS status,
@@ -491,4 +558,7 @@ SELECT 'Database initialization completed successfully!' AS status,
        (SELECT COUNT(*) FROM sprints) AS sprints_count,
        (SELECT COUNT(*) FROM tasks) AS tasks_count,
        (SELECT COUNT(*) FROM work_logs) AS work_logs_count,
-       (SELECT COUNT(*) FROM burndown_points) AS burndown_points_count;
+       (SELECT COUNT(*) FROM burndown_points) AS burndown_points_count,
+       (SELECT COUNT(*) FROM agent_chat_session) AS agent_sessions_count,
+       (SELECT COUNT(*) FROM agent_chat_message) AS agent_messages_count,
+       (SELECT COUNT(*) FROM agent_tool_call_log) AS agent_tool_calls_count;

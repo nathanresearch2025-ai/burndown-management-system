@@ -1,0 +1,65 @@
+spring:
+  application:
+    name: api-gateway
+  main:
+    web-application-type: reactive
+
+  cloud:
+    gateway:
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOriginPatterns: "*"
+            allowedMethods: "*"
+            allowedHeaders: "*"
+            allowCredentials: true
+      routes:
+        - id: auth-service
+          uri: lb://auth-service
+          predicates:
+            - Path=/api/v1/auth/**,/api/v1/users/**,/api/v1/roles/**,/api/v1/permissions/**,/api/v1/user-roles/**
+          filters:
+            - StripPrefix=0
+
+        - id: core-service
+          uri: lb://core-service
+          predicates:
+            - Path=/api/v1/projects/**,/api/v1/sprints/**,/api/v1/tasks/**,/api/v1/worklogs/**,/api/v1/burndown/**
+          filters:
+            - StripPrefix=0
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      timeout: 3000ms
+
+server:
+  port: 8080
+
+jwt:
+  secret: your-secret-key-change-this-in-production-min-256-bits
+  expiration: 604800000
+  issuer: burndown-auth-service
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,gateway
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+otel:
+  traces:
+    exporter: otlp
+  exporter:
+    otlp:
+      endpoint: http://tempo:4317

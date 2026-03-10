@@ -62,7 +62,13 @@
       "Bash(yum install -y git)",
       "Bash(git init)",
       "Bash(git config user.name \"Your Name\" && git config user.email \"your.email@example.com\")",
-      "Bash(git add .)"
+      "Bash(git add .)",
+      "Bash(git commit -m \"Initial commit: Burndown Management System\n\n- Spring Boot 3.2 backend with JWT authentication\n- React 18 frontend with TypeScript\n- PostgreSQL database with RBAC\n- Redis caching\n- Kubernetes deployment configurations\n- Monitoring with Prometheus and Grafana\n- Performance testing scripts\n- BCrypt strength optimized to 4 for testing\n\nCo-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>\")",
+      "Bash(git config user.name \"nathanresearch2025-ai\" && git config user.email \"nathan.research.2025@gmail.com\")",
+      "Bash(ssh-keygen -t ed25519 -C \"nathan.research.2025@gmail.com\" -f ~/.ssh/id_ed25519 -N \"\")",
+      "Bash(lsof -i :8081 -P -n)",
+      "Bash(ps -fp 835451)",
+      "Bash(pwdx 835451)"
     ]
   }
 }

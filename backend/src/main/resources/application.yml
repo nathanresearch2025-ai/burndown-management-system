@@ -44,6 +44,15 @@ spring:
           max-idle: 8
           min-idle: 0
 
+  ai:
+    openai:
+      base-url: https://api.deepseek.com/v1
+      api-key: sk-0bc064c6fb5d4fd48300705c47d4b11e
+      chat:
+        options:
+          model: deepseek-chat
+          temperature: 0.2
+
 server:
   port: 8080
   servlet:
@@ -54,15 +63,25 @@ jwt:
   expiration: 604800000
 
 ai:
-  enabled: false
-  base-url:
-  api-key:
-  chat-model:
+  enabled: true
+  base-url: https://api.deepseek.com/v1
+  api-key: sk-0bc064c6fb5d4fd48300705c47d4b11e
+  chat-model: deepseek-chat
+  embedding-model: text-embedding-3-small
+  embedding-base-url: https://api.openai.com/v1
+  embedding-api-key: ${OPENAI_API_KEY:}
   timeout: 30s
   max-similar-tasks: 5
   rate-limit:
     max-requests-per-user: 50
     window-minutes: 10
+
+agent:
+  standup:
+    enabled: true
+    max-tool-rounds: 3
+    response-timeout: 30s
+    require-evidence: true
 
 springdoc:
   api-docs:
