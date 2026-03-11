@@ -1,0 +1,372 @@
+{
+	"info": {
+		"_postman_id": "sprint-prediction-api",
+		"name": "Sprint Prediction API",
+		"description": "Sprint 完成预测 API 测试集合，包含登录认证和预测接口测试",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{jwt_token}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8080/api/v1",
+			"type": "string"
+		},
+		{
+			"key": "jwt_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "sprint_id",
+			"value": "1",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// 检查响应状态",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// 提取 JWT token",
+									"if (pm.response.code === 200) {",
+									"    const responseJson = pm.response.json();",
+									"    if (responseJson.token) {",
+									"        pm.collectionVariables.set(\"jwt_token\", responseJson.token);",
+									"        console.log(\"JWT Token saved:\", responseJson.token.substring(0, 20) + \"...\");",
+									"    }",
+									"}",
+									"",
+									"// 验证响应结构",
+									"pm.test(\"Response has token\", function () {",
+									"    const responseJson = pm.response.json();",
+									"    pm.expect(responseJson).to.have.property('token');",
+									"    pm.expect(responseJson).to.have.property('user');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"admin\",\n    \"password\": \"admin123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "用户登录获取 JWT Token"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Current User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has user info\", function () {",
+									"    const responseJson = pm.response.json();",
+									"    pm.expect(responseJson).to.have.property('id');",
+									"    pm.expect(responseJson).to.have.property('username');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/auth/me",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"me"
+							]
+						},
+						"description": "获取当前用户信息，验证 JWT Token 有效性"
+					},
+					"response": []
+				}
+			],
+			"description": "用户认证相关接口"
+		},
+		{
+			"name": "Sprint Management",
+			"item": [
+				{
+					"name": "Get All Sprints",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response is array\", function () {",
+									"    const responseJson = pm.response.json();",
+									"    pm.expect(responseJson).to.be.an('array');",
+									"});",
+									"",
+									"// 如果有 Sprint，保存第一个的 ID",
+									"if (pm.response.code === 200) {",
+									"    const sprints = pm.response.json();",
+									"    if (sprints.length > 0) {",
+									"        pm.collectionVariables.set(\"sprint_id\", sprints[0].id.toString());",
+									"        console.log(\"Sprint ID saved:\", sprints[0].id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/sprints",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"sprints"
+							]
+						},
+						"description": "获取所有 Sprint 列表"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Sprint by ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has sprint data\", function () {",
+									"    const responseJson = pm.response.json();",
+									"    pm.expect(responseJson).to.have.property('id');",
+									"    pm.expect(responseJson).to.have.property('name');",
+									"    pm.expect(responseJson).to.have.property('status');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/sprints/{{sprint_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"sprints",
+								"{{sprint_id}}"
+							]
+						},
+						"description": "根据 ID 获取 Sprint 详情"
+					},
+					"response": []
+				}
+			],
+			"description": "Sprint 管理相关接口"
+		},
+		{
+			"name": "Sprint Prediction",
+			"item": [
+				{
+					"name": "Predict Sprint Completion",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has prediction data\", function () {",
+									"    const responseJson = pm.response.json();",
+									"    pm.expect(responseJson).to.have.property('probability');",
+									"    pm.expect(responseJson).to.have.property('riskLevel');",
+									"    pm.expect(responseJson).to.have.property('featureSummary');",
+									"    pm.expect(responseJson).to.have.property('predictedAt');",
+									"});",
+									"",
+									"pm.test(\"Probability is valid\", function () {",
+									"    const responseJson = pm.response.json();",
+									"    pm.expect(responseJson.probability).to.be.a('number');",
+									"    pm.expect(responseJson.probability).to.be.at.least(0);",
+									"    pm.expect(responseJson.probability).to.be.at.most(1);",
+									"});",
+									"",
+									"pm.test(\"Risk level is valid\", function () {",
+									"    const responseJson = pm.response.json();",
+									"    pm.expect(responseJson.riskLevel).to.be.oneOf(['GREEN', 'YELLOW', 'RED']);",
+									"});",
+									"",
+									"pm.test(\"Feature summary exists\", function () {",
+									"    const responseJson = pm.response.json();",
+									"    const summary = responseJson.featureSummary;",
+									"    pm.expect(summary).to.have.property('daysElapsedRatio');",
+									"    pm.expect(summary).to.have.property('remainingRatio');",
+									"    pm.expect(summary).to.have.property('velocityCurrent');",
+									"    pm.expect(summary).to.have.property('velocityAvg');",
+									"    pm.expect(summary).to.have.property('projectedCompletionRatio');",
+									"});",
+									"",
+									"// 输出预测结果",
+									"if (pm.response.code === 200) {",
+									"    const result = pm.response.json();",
+									"    console.log('预测结果:');",
+									"    console.log('- 完成概率: ' + (result.probability * 100).toFixed(2) + '%');",
+									"    console.log('- 风险等级: ' + result.riskLevel);",
+									"    console.log('- 当前速度: ' + result.featureSummary.velocityCurrent);",
+									"    console.log('- 平均速度: ' + result.featureSummary.velocityAvg);",
+									"    console.log('- 预测完成率: ' + (result.featureSummary.projectedCompletionRatio * 100).toFixed(2) + '%');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/sprints/{{sprint_id}}/completion-probability",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"sprints",
+								"{{sprint_id}}",
+								"completion-probability"
+							]
+						},
+						"description": "预测指定 Sprint 的完成概率和风险等级"
+					},
+					"response": []
+				},
+				{
+					"name": "Predict Sprint Completion - Custom ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 or 404\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 404]);",
+									"});",
+									"",
+									"if (pm.response.code === 200) {",
+									"    pm.test(\"Response has prediction data\", function () {",
+									"        const responseJson = pm.response.json();",
+									"        pm.expect(responseJson).to.have.property('probability');",
+									"        pm.expect(responseJson).to.have.property('riskLevel');",
+									"    });",
+									"} else if (pm.response.code === 404) {",
+									"    console.log(\"Sprint not found - this is expected for non-existent IDs\");",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/sprints/999/completion-probability",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"sprints",
+								"999",
+								"completion-probability"
+							]
+						},
+						"description": "测试不存在的 Sprint ID（应返回 404）"
+					},
+					"response": []
+				}
+			],
+			"description": "Sprint 完成预测相关接口"
+		}
+	]
+}
