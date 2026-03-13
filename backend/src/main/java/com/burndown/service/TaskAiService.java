@@ -12,8 +12,10 @@ import com.burndown.repository.ProjectRepository;
 import com.burndown.repository.TaskRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.pgvector.PGvector;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Timer;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.PageRequest;
@@ -37,6 +39,7 @@ public class TaskAiService {
     private final ProjectRepository projectRepository;
     private final AiTaskGenerationLogRepository aiTaskGenerationLogRepository;
     private final AiClientService aiClientService;
+    private final EmbeddingService embeddingService;
     private final ObjectMapper objectMapper;
     private final Counter requestCounter;
     private final Counter successCounter;
@@ -47,10 +50,14 @@ public class TaskAiService {
     @Value("${ai.max-similar-tasks:5}")
     private int maxSimilarTasks;
 
+    @Value("${ai.enabled:false}")
+    private boolean aiEnabled;
+
     public TaskAiService(TaskRepository taskRepository,
                          ProjectRepository projectRepository,
                          AiTaskGenerationLogRepository aiTaskGenerationLogRepository,
                          AiClientService aiClientService,
+                         @Autowired(required = false) EmbeddingService embeddingService,
                          ObjectMapper objectMapper,
                          Counter aiGenerationRequestCounter,
                          Counter aiGenerationSuccessCounter,
@@ -61,6 +68,7 @@ public class TaskAiService {
         this.projectRepository = projectRepository;
         this.aiTaskGenerationLogRepository = aiTaskGenerationLogRepository;
         this.aiClientService = aiClientService;
+        this.embeddingService = embeddingService;
         this.objectMapper = objectMapper;
         this.requestCounter = aiGenerationRequestCounter;
         this.successCounter = aiGenerationSuccessCounter;
@@ -70,7 +78,7 @@ public class TaskAiService {
     }
 
     @Transactional
-    @Cacheable(value = "aiTaskGeneration", key = "#request.projectId + ':' + #request.title + ':' + #request.type", unless = "#result == null")
+    // @Cacheable(value = "aiTaskGeneration", key = "#request.projectId + ':' + #request.title + ':' + #request.type", unless = "#result == null")
     public GenerateTaskDescriptionResponse generateDescription(GenerateTaskDescriptionRequest request, Long userId) {
         requestCounter.increment();
 
@@ -78,19 +86,8 @@ public class TaskAiService {
             Project project = projectRepository.findById(request.getProjectId())
                     .orElseThrow(() -> new BusinessException("PROJECT_NOT_FOUND", "project.notFound", HttpStatus.NOT_FOUND));
 
-            List<Task> candidateTasks = taskRepository.findByProjectIdOrderByUpdatedAtDesc(
-                    request.getProjectId(),
-                    PageRequest.of(0, Math.max(maxSimilarTasks * 4, 12))
-            );
-
-            List<ScoredTask> scoredTasks = candidateTasks.stream()
-                    .filter(task -> !task.getTitle().equalsIgnoreCase(request.getTitle()))
-                    .map(task -> new ScoredTask(task, calculateSimilarity(task, request)))
-                    .filter(scoredTask -> scoredTask.similarity() > 0)
-                    .sorted(Comparator.comparingDouble(ScoredTask::similarity).reversed()
-                            .thenComparing(scoredTask -> scoredTask.task().getUpdatedAt(), Comparator.nullsLast(Comparator.reverseOrder())))
-                    .limit(maxSimilarTasks)
-                    .toList();
+            // 使用向量相似度搜索查找相似任务
+            List<ScoredTask> scoredTasks = findSimilarTasksUsingVectorSearch(request);
 
             String description;
             String generatedBy;
@@ -132,6 +129,97 @@ public class TaskAiService {
                     .generatedAt(LocalDateTime.now())
                     .build();
         });
+    }
+
+    /**
+     * 使用向量数据库查找相似任务
+     */
+    private List<ScoredTask> findSimilarTasksUsingVectorSearch(GenerateTaskDescriptionRequest request) {
+        if (!aiEnabled || embeddingService == null) {
+            // AI 未启用时，使用关键词匹配作为降级方案
+            return findSimilarTasksUsingKeywordMatch(request);
+        }
+
+        try {
+            // 生成查询文本的向量
+            String queryText = embeddingService.buildTaskEmbeddingText(
+                    request.getTitle(),
+                    null, // 新任务还没有描述
+                    request.getType(),
+                    request.getPriority()
+            );
+
+            PGvector queryEmbedding = embeddingService.generateEmbedding(queryText);
+
+            // 使用向量相似度搜索
+            List<Task> similarTasks = taskRepository.findSimilarTasksByEmbedding(
+                    request.getProjectId(),
+                    queryEmbedding.toString(),
+                    request.getTitle(),
+                    maxSimilarTasks
+            );
+
+            // 计算相似度分数（基于向量距离）
+            return similarTasks.stream()
+                    .map(task -> {
+                        // 向量余弦距离已经在查询中排序，这里给一个基于排名的分数
+                        double similarity = calculateVectorSimilarityScore(task, request);
+                        return new ScoredTask(task, similarity);
+                    })
+                    .filter(scoredTask -> scoredTask.similarity() > 0)
+                    .toList();
+
+        } catch (Exception ex) {
+            // 向量搜索失败时降级到关键词匹配
+            System.err.println("Vector search failed, falling back to keyword match: " + ex.getMessage());
+            return findSimilarTasksUsingKeywordMatch(request);
+        }
+    }
+
+    /**
+     * 关键词匹配降级方案（原有逻辑）
+     */
+    private List<ScoredTask> findSimilarTasksUsingKeywordMatch(GenerateTaskDescriptionRequest request) {
+        List<Task> candidateTasks = taskRepository.findByProjectIdOrderByUpdatedAtDesc(
+                request.getProjectId(),
+                PageRequest.of(0, Math.max(maxSimilarTasks * 4, 12))
+        );
+
+        return candidateTasks.stream()
+                .filter(task -> !task.getTitle().equalsIgnoreCase(request.getTitle()))
+                .map(task -> new ScoredTask(task, calculateSimilarity(task, request)))
+                .filter(scoredTask -> scoredTask.similarity() > 0)
+                .sorted(Comparator.comparingDouble(ScoredTask::similarity).reversed()
+                        .thenComparing(scoredTask -> scoredTask.task().getUpdatedAt(), Comparator.nullsLast(Comparator.reverseOrder())))
+                .limit(maxSimilarTasks)
+                .toList();
+    }
+
+    /**
+     * 基于向量搜索结果计算相似度分数
+     * 结合向量距离排名和任务属性匹配
+     */
+    private double calculateVectorSimilarityScore(Task task, GenerateTaskDescriptionRequest request) {
+        double score = 0.7; // 基础分数（因为已经通过向量搜索筛选）
+
+        // 任务类型匹配加分
+        if (task.getType() != null && task.getType().name().equalsIgnoreCase(request.getType())) {
+            score += 0.15;
+        }
+
+        // 优先级匹配加分
+        if (request.getPriority() != null && task.getPriority() != null
+                && task.getPriority().name().equalsIgnoreCase(request.getPriority())) {
+            score += 0.10;
+        }
+
+        // 故事点匹配加分
+        if (request.getStoryPoints() != null && task.getStoryPoints() != null
+                && request.getStoryPoints().compareTo(task.getStoryPoints()) == 0) {
+            score += 0.05;
+        }
+
+        return Math.min(score, 1.0);
     }
 
     private double calculateSimilarity(Task task, GenerateTaskDescriptionRequest request) {

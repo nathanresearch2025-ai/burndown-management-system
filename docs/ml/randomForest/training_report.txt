@@ -1,0 +1,50 @@
+============================================================
+  随机森林 Sprint 完成预测 - 训练报告
+============================================================
+
+特征列数：19
+特征列：['sprint_days', 'days_elapsed', 'committed_sp', 'remaining_sp', 'completed_sp', 'velocity_current', 'velocity_avg_5', 'velocity_std_5', 'blocked_stories', 'attendance_rate', 'ratio_feature', 'ratio_bug', 'ratio_tech_debt', 'days_remaining', 'elapsed_ratio', 'remaining_ratio', 'velocity_gap', 'projected_sp', 'projected_completion_ratio']
+
+Accuracy : 0.9500
+ROC-AUC  : 0.9853
+
+分类报告：
+              precision    recall  f1-score   support
+
+         未完成       0.93      0.96      0.95        90
+          完成       0.96      0.95      0.95       110
+
+    accuracy                           0.95       200
+   macro avg       0.95      0.95      0.95       200
+weighted avg       0.95      0.95      0.95       200
+
+特征重要性：
+projected_completion_ratio    0.264806
+projected_sp                  0.171056
+velocity_current              0.121330
+velocity_gap                  0.083834
+elapsed_ratio                 0.062728
+remaining_ratio               0.058157
+days_elapsed                  0.042222
+remaining_sp                  0.039349
+completed_sp                  0.032061
+days_remaining                0.023842
+committed_sp                  0.019044
+velocity_avg_5                0.016829
+velocity_std_5                0.011596
+attendance_rate               0.011587
+ratio_feature                 0.010228
+sprint_days                   0.009840
+blocked_stories               0.007429
+ratio_bug                     0.007385
+ratio_tech_debt               0.006677
+
+模型参数：
+  n_estimators: 200
+  max_depth: 10
+  min_samples_split: 5
+  min_samples_leaf: 2
+  max_features: sqrt
+  class_weight: balanced
+  random_state: 42
+  n_jobs: -1

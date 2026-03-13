@@ -15,7 +15,8 @@ spec:
       hostNetwork: true
       containers:
       - name: postgres
-        image: postgres:15
+        image: postgres-pgvector:15
+        imagePullPolicy: Never
         ports:
         - containerPort: 5432
         env:

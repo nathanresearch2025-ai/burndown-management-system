@@ -1,0 +1,129 @@
+{
+  "info": {
+    "name": "LangChain Standup API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "LangChain Standup Query",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"question\": \"我想要最近两个 Sprint 的任务趋势与燃尽风险摘要\",\n  \"projectId\": 1001,\n  \"sprintId\": 302,\n  \"userId\": 21,\n  \"timezone\": \"Asia/Shanghai\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8080/agent/langchain/standup/query",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "agent",
+            "langchain",
+            "standup",
+            "query"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Tool - In Progress Tasks",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"projectId\": 1001,\n  \"userId\": 21\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8080/agent/tools/in-progress-tasks",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "agent",
+            "tools",
+            "in-progress-tasks"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Tool - Sprint Burndown",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"projectId\": 1001,\n  \"sprintId\": 302\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8080/agent/tools/sprint-burndown",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "agent",
+            "tools",
+            "sprint-burndown"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Tool - Burndown Risk",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"projectId\": 1001,\n  \"sprintId\": 302\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8080/agent/tools/burndown-risk",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "agent",
+            "tools",
+            "burndown-risk"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}

@@ -3,7 +3,7 @@ spring:
     name: burndown-management
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/burndown_db
+    url: jdbc:postgresql://159.75.202.106:30432/burndown_db
     username: postgres
     password: root
     driver-class-name: org.postgresql.Driver
@@ -34,8 +34,8 @@ spring:
 
   data:
     redis:
-      host: localhost
-      port: 6379
+      host: 159.75.202.106
+      port: 30379
       password:
       timeout: 3000ms
       lettuce:
@@ -43,6 +43,15 @@ spring:
           max-active: 8
           max-idle: 8
           min-idle: 0
+
+  ai:
+    openai:
+      base-url: https://api.deepseek.com
+      api-key: sk-0bc064c6fb5d4fd48300705c47d4b11e
+      chat:
+        options:
+          model: deepseek-chat
+          temperature: 0.2
 
 server:
   port: 8080
@@ -54,15 +63,30 @@ jwt:
   expiration: 604800000
 
 ai:
-  enabled: false
-  base-url:
-  api-key:
-  chat-model:
+  enabled: true
+  base-url: https://api.deepseek.com
+  api-key: sk-0bc064c6fb5d4fd48300705c47d4b11e
+  chat-model: deepseek-chat
+  embedding-model: text-embedding-3-small
+  embedding-base-url: https://api.openai.com
+  embedding-api-key: ${OPENAI_API_KEY:}
   timeout: 30s
   max-similar-tasks: 5
   rate-limit:
     max-requests-per-user: 50
     window-minutes: 10
+
+langchain:
+  enabled: true
+  base-url: http://localhost:8091
+  timeout: 120s
+
+agent:
+  standup:
+    enabled: true
+    max-tool-rounds: 3
+    response-timeout: 30s
+    require-evidence: true
 
 springdoc:
   api-docs:
