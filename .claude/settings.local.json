@@ -68,7 +68,19 @@
       "Bash(ssh-keygen -t ed25519 -C \"nathan.research.2025@gmail.com\" -f ~/.ssh/id_ed25519 -N \"\")",
       "Bash(lsof -i :8081 -P -n)",
       "Bash(ps -fp 835451)",
-      "Bash(pwdx 835451)"
+      "Bash(pwdx 835451)",
+      "Bash(cd \"D:/java/claude/projects/2/backend/langchain-python\" && pip install -r requirements.txt 2>&1)",
+      "Bash(cd \"D:/java/claude/projects/2/backend/langchain-python\" && pip install fastapi==0.115.0 uvicorn==0.30.6 python-dotenv==1.0.1 pydantic==2.8.2 httpx==0.27.0 SQLAlchemy==2.0.32 psycopg2-binary httpx-sse langchain langchain-openai langchain-community openai 2>&1)",
+      "Bash(python -c \"from langchain_classic.agents import AgentExecutor; print\\('langchain_classic OK'\\)\" 2>&1)",
+      "Bash(cd \"D:/java/claude/projects/2/backend/langchain-python\" && python -c \"from app.agents import run_multi_agent; print\\('agents import OK'\\)\" 2>&1)",
+      "Bash(pkill -f \"uvicorn app.main:app\" 2>/dev/null; echo \"stopped\")",
+      "Bash(netstat -ano | grep 8091 | grep LISTEN)",
+      "Bash(taskkill //PID 23496 //F && echo \"killed PID 23496\")",
+      "Bash(netstat -ano | grep 8091 | grep LISTEN && echo \"---\" && tail -5 \"D:/java/claude/projects/2/backend/langchain-python/app.log\")",
+      "Bash(curl -s -X POST http://localhost:8091/agent/standup/query \\\\\n  -H \"Content-Type: application/json\" \\\\\n  -d '{\"question\":\"今日站会摘要\",\"projectId\":1,\"sprintId\":null,\"userId\":1,\"timezone\":null,\"traceId\":\"test-001\"}' \\\\\n  2>&1)",
+      "Bash(pkill -f \"uvicorn app.main:app\" 2>/dev/null; sleep 1\nnetstat -ano 2>/dev/null | grep 8091 | grep LISTEN && echo \"port still in use\" || echo \"port free\")",
+      "Bash(taskkill //PID 10996 //F 2>&1 && sleep 2 && echo \"killed\")",
+      "Bash(curl -s -X POST http://localhost:8091/agent/standup/query \\\\\n  -H \"Content-Type: application/json\" \\\\\n  -d '{\"question\":\"今日站会摘要\",\"projectId\":1,\"sprintId\":null,\"userId\":1,\"timezone\":null,\"traceId\":\"test-001\"}' 2>&1)"
     ]
   }
 }

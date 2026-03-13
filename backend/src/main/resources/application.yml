@@ -76,6 +76,11 @@ ai:
     max-requests-per-user: 50
     window-minutes: 10
 
+langchain:
+  enabled: true
+  base-url: http://localhost:8091
+  timeout: 120s
+
 agent:
   standup:
     enabled: true
