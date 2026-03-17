@@ -1,0 +1,524 @@
+{
+	"info": {
+		"_postman_id": "langchain-standup-query-001",
+		"name": "Burndown LangChain Standup Query API",
+		"description": "LangChain 站会查询接口测试集合\n\n## 功能说明\n\n该接口使用 LangChain 多 Agent 编排，调用后端工具获取站会相关数据并生成智能摘要。\n\n## 性能优化\n\n- Fast 模式：LLM 调用 1 次，工具并发调用，P95 < 8s\n- Legacy 模式：LLM 调用 4 次，工具串行调用（用于回滚）\n\n## 环境变量\n\n- `baseUrl`: Spring Boot 后端地址\n- `langchainUrl`: LangChain Python 服务地址\n- `projectId`: 项目 ID\n- `sprintId`: Sprint ID\n- `userId`: 用户 ID",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "LangChain Standup Query",
+			"item": [
+				{
+					"name": "站会查询 - 完整问题",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has answer field\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('answer');",
+									"    pm.expect(jsonData.answer).to.be.a('string');",
+									"    pm.expect(jsonData.answer.length).to.be.above(0);",
+									"});",
+									"",
+									"pm.test(\"Response has toolsUsed array\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('toolsUsed');",
+									"    pm.expect(jsonData.toolsUsed).to.be.an('array');",
+									"});",
+									"",
+									"pm.test(\"Response time is less than 10000ms\", function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(10000);",
+									"});",
+									"",
+									"// 记录响应时间",
+									"console.log(\"Response time: \" + pm.response.responseTime + \"ms\");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"question\": \"今天的站会总结\",\n  \"projectId\": {{projectId}},\n  \"sprintId\": {{sprintId}},\n  \"userId\": {{userId}}\n}"
+						},
+						"url": {
+							"raw": "{{langchainUrl}}/agent/standup/query",
+							"host": [
+								"{{langchainUrl}}"
+							],
+							"path": [
+								"agent",
+								"standup",
+								"query"
+							]
+						},
+						"description": "查询今天的站会总结，包含任务进展、燃尽图和风险评估"
+					},
+					"response": []
+				},
+				{
+					"name": "站会查询 - 仅任务进展",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has answer field\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('answer');",
+									"});",
+									"",
+									"console.log(\"Response time: \" + pm.response.responseTime + \"ms\");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"question\": \"我今天有哪些任务在进行中？\",\n  \"projectId\": {{projectId}},\n  \"sprintId\": {{sprintId}},\n  \"userId\": {{userId}}\n}"
+						},
+						"url": {
+							"raw": "{{langchainUrl}}/agent/standup/query",
+							"host": [
+								"{{langchainUrl}}"
+							],
+							"path": [
+								"agent",
+								"standup",
+								"query"
+							]
+						},
+						"description": "仅查询用户当前进行中的任务"
+					},
+					"response": []
+				},
+				{
+					"name": "站会查询 - 燃尽图情况",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has riskLevel field\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('riskLevel');",
+									"});",
+									"",
+									"console.log(\"Response time: \" + pm.response.responseTime + \"ms\");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"question\": \"当前 Sprint 的燃尽图情况如何？有延期风险吗？\",\n  \"projectId\": {{projectId}},\n  \"sprintId\": {{sprintId}},\n  \"userId\": {{userId}}\n}"
+						},
+						"url": {
+							"raw": "{{langchainUrl}}/agent/standup/query",
+							"host": [
+								"{{langchainUrl}}"
+							],
+							"path": [
+								"agent",
+								"standup",
+								"query"
+							]
+						},
+						"description": "查询 Sprint 燃尽图情况和风险评估"
+					},
+					"response": []
+				},
+				{
+					"name": "站会查询 - 带 traceId",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"console.log(\"Response time: \" + pm.response.responseTime + \"ms\");",
+									"console.log(\"TraceId: \" + pm.variables.get('traceId'));"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// 生成 traceId",
+									"const traceId = 'trace-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);",
+									"pm.variables.set('traceId', traceId);",
+									"console.log('Generated traceId: ' + traceId);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"question\": \"今天的站会总结\",\n  \"projectId\": {{projectId}},\n  \"sprintId\": {{sprintId}},\n  \"userId\": {{userId}},\n  \"traceId\": \"{{traceId}}\"\n}"
+						},
+						"url": {
+							"raw": "{{langchainUrl}}/agent/standup/query",
+							"host": [
+								"{{langchainUrl}}"
+							],
+							"path": [
+								"agent",
+								"standup",
+								"query"
+							]
+						},
+						"description": "带 traceId 的请求，用于日志追踪和性能分析"
+					},
+					"response": []
+				},
+				{
+					"name": "站会查询 - 无 sprintId",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response handles missing sprintId\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('answer');",
+									"    // 应该提示缺少 sprintId 或返回 UNKNOWN 风险等级",
+									"});",
+									"",
+									"console.log(\"Response time: \" + pm.response.responseTime + \"ms\");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"question\": \"我今天有哪些任务？\",\n  \"projectId\": {{projectId}},\n  \"userId\": {{userId}}\n}"
+						},
+						"url": {
+							"raw": "{{langchainUrl}}/agent/standup/query",
+							"host": [
+								"{{langchainUrl}}"
+							],
+							"path": [
+								"agent",
+								"standup",
+								"query"
+							]
+						},
+						"description": "测试不提供 sprintId 的情况，应该跳过燃尽图和风险评估"
+					},
+					"response": []
+				}
+			],
+			"description": "LangChain 站会查询接口测试"
+		},
+		{
+			"name": "Performance Testing",
+			"item": [
+				{
+					"name": "性能测试 - 单次请求",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const responseTime = pm.response.responseTime;",
+									"console.log(\"Response time: \" + responseTime + \"ms\");",
+									"",
+									"pm.test(\"Response time is acceptable\", function () {",
+									"    // P95 目标 < 8000ms",
+									"    pm.expect(responseTime).to.be.below(8000);",
+									"});",
+									"",
+									"// 记录到环境变量用于统计",
+									"let responseTimes = pm.environment.get('responseTimes') || [];",
+									"responseTimes.push(responseTime);",
+									"pm.environment.set('responseTimes', responseTimes);",
+									"",
+									"// 如果是最后一次迭代，计算统计数据",
+									"const iteration = pm.info.iteration;",
+									"const totalIterations = pm.info.iterationCount;",
+									"",
+									"if (iteration === totalIterations - 1) {",
+									"    responseTimes.sort((a, b) => a - b);",
+									"    const count = responseTimes.length;",
+									"    const sum = responseTimes.reduce((a, b) => a + b, 0);",
+									"    const avg = sum / count;",
+									"    const p50 = responseTimes[Math.floor(count * 0.5)];",
+									"    const p95 = responseTimes[Math.floor(count * 0.95)];",
+									"    const p99 = responseTimes[Math.floor(count * 0.99)];",
+									"    const min = responseTimes[0];",
+									"    const max = responseTimes[count - 1];",
+									"    ",
+									"    console.log('\\n=== Performance Statistics ===');",
+									"    console.log('Total requests: ' + count);",
+									"    console.log('Average: ' + avg.toFixed(2) + 'ms');",
+									"    console.log('Min: ' + min + 'ms');",
+									"    console.log('Max: ' + max + 'ms');",
+									"    console.log('P50: ' + p50 + 'ms');",
+									"    console.log('P95: ' + p95 + 'ms');",
+									"    console.log('P99: ' + p99 + 'ms');",
+									"    console.log('==============================\\n');",
+									"    ",
+									"    // 清空统计数据",
+									"    pm.environment.unset('responseTimes');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// 生成唯一 traceId",
+									"const traceId = 'perf-' + Date.now() + '-' + pm.info.iteration;",
+									"pm.variables.set('traceId', traceId);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"question\": \"今天的站会总结\",\n  \"projectId\": {{projectId}},\n  \"sprintId\": {{sprintId}},\n  \"userId\": {{userId}},\n  \"traceId\": \"{{traceId}}\"\n}"
+						},
+						"url": {
+							"raw": "{{langchainUrl}}/agent/standup/query",
+							"host": [
+								"{{langchainUrl}}"
+							],
+							"path": [
+								"agent",
+								"standup",
+								"query"
+							]
+						},
+						"description": "性能测试请求\n\n使用方法：\n1. 在 Collection Runner 中运行\n2. 设置 Iterations 为 50-100\n3. 查看控制台输出的统计数据"
+					},
+					"response": []
+				}
+			],
+			"description": "性能测试相关请求"
+		},
+		{
+			"name": "Backend Tools (Direct)",
+			"item": [
+				{
+					"name": "获取进行中任务",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"projectId\": {{projectId}},\n  \"userId\": {{userId}}\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/agent/tools/in-progress-tasks",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"agent",
+								"tools",
+								"in-progress-tasks"
+							]
+						},
+						"description": "直接调用后端工具接口 - 获取进行中任务"
+					},
+					"response": []
+				},
+				{
+					"name": "获取燃尽图数据",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"sprintId\": {{sprintId}}\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/agent/tools/sprint-burndown",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"agent",
+								"tools",
+								"sprint-burndown"
+							]
+						},
+						"description": "直接调用后端工具接口 - 获取燃尽图数据"
+					},
+					"response": []
+				},
+				{
+					"name": "评估燃尽风险",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"sprintId\": {{sprintId}}\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/agent/tools/burndown-risk",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"agent",
+								"tools",
+								"burndown-risk"
+							]
+						},
+						"description": "直接调用后端工具接口 - 评估燃尽风险"
+					},
+					"response": []
+				}
+			],
+			"description": "直接调用后端工具接口（用于调试）"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8080/api/v1",
+			"type": "string"
+		},
+		{
+			"key": "langchainUrl",
+			"value": "http://localhost:8091",
+			"type": "string"
+		},
+		{
+			"key": "projectId",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "sprintId",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "userId",
+			"value": "1",
+			"type": "string"
+		}
+	]
+}
