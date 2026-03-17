@@ -2,7 +2,12 @@ from langchain.agents import AgentExecutor, create_react_agent  # LangChain Agen
 from langchain_core.prompts import PromptTemplate  # 提示词模板
 from langchain_core.tools import Tool  # 工具包装
 from langchain_core.messages import HumanMessage, SystemMessage  # 消息类型
-from typing import List  # 类型注解
+from typing import List, Optional, Dict, Any  # 类型注解
+import os
+import time
+import asyncio
+import json
+import anyio
 
 from .llm import build_llm  # 构建 LLM 实例
 from . import tools as backend_tools  # 引入后端工具方法
@@ -11,6 +16,19 @@ from . import tools as backend_tools  # 引入后端工具方法
 SYSTEM_PLANNER = """你是 Planner Agent。只负责将用户问题拆解为 3-6 个可执行步骤，禁止调用工具。返回 JSON 数组。"""  # Planner 提示词
 SYSTEM_ANALYST = """你是 Analyst Agent。只负责基于数据分析趋势与风险，禁止调用工具。"""  # Analyst 提示词
 SYSTEM_WRITER = """你是 Writer Agent。只负责生成最终摘要。"""  # Writer 提示词
+SYSTEM_SUMMARIZER = """你是 Scrum 站会助手。你会收到：用户问题 + 三个工具的原始输出（字符串）。
+请严格输出一个 JSON 对象，字段如下：
+{
+  "answer": "中文最终回答（结论 + 证据 + 建议）",
+  "toolsUsed": ["getInProgressTasks","getSprintBurndown","evaluateBurndownRisk"],
+  "evidence": ["从工具输出中摘取的关键证据行/关键数值，最多 6 条"],
+  "riskLevel": "LOW|MEDIUM|HIGH|UNKNOWN"
+}
+约束：
+- 不要编造工具输出中不存在的数据；
+- 如果 sprintId 为 0 或燃尽数据缺失，riskLevel 输出 UNKNOWN，并在 answer 里说明原因；
+- JSON 必须可解析，不要额外输出解释文本。
+"""
 
 # ReAct 格式提示词，严格要求 Thought/Action/Action Input 格式
 REACT_PROMPT_TEMPLATE = """你是 Data Agent，只负责调用工具获取数据，不做分析。
@@ -87,10 +105,99 @@ def build_data_agent(project_id: int, sprint_id: int, user_id: int) -> AgentExec
     return AgentExecutor(
         agent=agent,
         tools=tools,
-        verbose=True,
+        verbose=False,
         handle_parsing_errors=True,
-        max_iterations=6,  # 防止无限循环
+        max_iterations=3,  # 防止无限循环（降低回合数）
     )
+
+async def invoke_llm_async(system_prompt: str, user_input: str) -> str:
+    llm = build_llm()
+    messages = [
+        SystemMessage(content=system_prompt),
+        HumanMessage(content=user_input),
+    ]
+    response = await anyio.to_thread.run_sync(llm.invoke, messages)
+    return response.content
+
+
+async def run_fast_pipeline(
+        question: str,
+        project_id: int,
+        sprint_id: int,
+        user_id: int,
+        trace_id: Optional[str] = None,
+        tools_concurrent: bool = True,
+        log_step_timing: bool = True,
+) -> Dict[str, Any]:
+    start = time.time()
+
+    async def _tool_calls() -> Dict[str, str]:
+        in_progress_coro = backend_tools.get_in_progress_tasks(project_id, user_id, trace_id=trace_id)
+
+        if sprint_id and sprint_id > 0:
+            burndown_coro = backend_tools.get_sprint_burndown(project_id, sprint_id, trace_id=trace_id)
+            risk_coro = backend_tools.evaluate_burndown_risk(project_id, sprint_id, trace_id=trace_id)
+        else:
+            async def _skip(msg: str) -> str:
+                return msg
+            burndown_coro = _skip("未提供 sprintId，跳过燃尽图查询")
+            risk_coro = _skip("未提供 sprintId，跳过风险评估")
+
+        t0 = time.time()
+        if tools_concurrent:
+            in_progress, burndown, risk = await asyncio.gather(in_progress_coro, burndown_coro, risk_coro)
+        else:
+            in_progress = await in_progress_coro
+            burndown = await burndown_coro
+            risk = await risk_coro
+        tools_ms = int((time.time() - t0) * 1000)
+
+        if log_step_timing:
+            print(f"[TIMING] traceId={trace_id} tools_ms_total={tools_ms}")
+
+        return {
+            "getInProgressTasks": in_progress,
+            "getSprintBurndown": burndown,
+            "evaluateBurndownRisk": risk,
+        }
+
+    tools_out = await _tool_calls()
+
+    t1 = time.time()
+    summarize_input = (
+        f"traceId={trace_id}\n"
+        f"用户问题：{question}\n\n"
+        f"工具输出：\n"
+        f"[getInProgressTasks]\n{tools_out['getInProgressTasks']}\n\n"
+        f"[getSprintBurndown]\n{tools_out['getSprintBurndown']}\n\n"
+        f"[evaluateBurndownRisk]\n{tools_out['evaluateBurndownRisk']}\n"
+    )
+    summary_json = await invoke_llm_async(SYSTEM_SUMMARIZER, summarize_input)
+    llm_ms = int((time.time() - t1) * 1000)
+    total_ms = int((time.time() - start) * 1000)
+
+    if log_step_timing:
+        print(f"[TIMING] traceId={trace_id} llm_summarize_ms={llm_ms} total_ms={total_ms}")
+
+    # 解析 JSON（模型偶发输出不规范时，做兜底）
+    try:
+        parsed = json.loads(summary_json)
+        return {
+            "summary": parsed.get("answer", ""),
+            "toolsUsed": parsed.get("toolsUsed", ["getInProgressTasks", "getSprintBurndown", "evaluateBurndownRisk"]),
+            "evidence": parsed.get("evidence", []),
+            "riskLevel": parsed.get("riskLevel", None),
+            "raw": parsed,
+        }
+    except Exception:
+        # fallback：保持接口可用
+        return {
+            "summary": summary_json,
+            "toolsUsed": ["getInProgressTasks", "getSprintBurndown", "evaluateBurndownRisk"],
+            "evidence": [],
+            "riskLevel": None,
+            "raw": {"unparsed": True},
+        }
 
 
 def run_multi_agent(question: str, project_id: int, sprint_id: int, user_id: int):  # 多 Agent 流水线编排
@@ -131,3 +238,15 @@ def run_multi_agent(question: str, project_id: int, sprint_id: int, user_id: int
         "analysis": analysis,
         "summary": summary,
     }
+
+
+def pipeline_mode() -> str:
+    return os.getenv("STANDUP_PIPELINE_MODE", "fast").strip().lower()
+
+
+def tools_concurrent_enabled() -> bool:
+    return os.getenv("TOOLS_CONCURRENT", "true").strip().lower() in ("1", "true", "yes", "y", "on")
+
+
+def log_step_timing_enabled() -> bool:
+    return os.getenv("LOG_STEP_TIMING", "true").strip().lower() in ("1", "true", "yes", "y", "on")

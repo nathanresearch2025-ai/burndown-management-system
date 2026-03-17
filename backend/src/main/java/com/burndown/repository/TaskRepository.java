@@ -15,6 +15,7 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     List<Task> findBySprintId(Long sprintId);
     List<Task> findByProjectId(Long projectId);
     List<Task> findByAssigneeId(Long assigneeId);
+    List<Task> findByProjectIdAndAssigneeIdAndStatus(Long projectId, Long assigneeId, Task.TaskStatus status);
     List<Task> findByProjectIdOrderByUpdatedAtDesc(Long projectId, Pageable pageable);
 
     @Query(value = "SELECT MAX(CAST(SUBSTRING(task_key FROM '[0-9]+$') AS INTEGER)) FROM tasks WHERE project_id = ?1", nativeQuery = true)

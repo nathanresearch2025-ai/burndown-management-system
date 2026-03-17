@@ -10,7 +10,6 @@ import org.springframework.context.annotation.Description;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Standup Agent 任务工具类
@@ -58,11 +57,11 @@ public class StandupTaskTools {
 
         try {
             // 查询任务：项目匹配 + 用户匹配 + 状态为"进行中"
-            List<Task> tasks = taskRepository.findByProjectId(request.projectId()).stream()
-                    .filter(task -> task.getAssigneeId() != null &&
-                                  task.getAssigneeId().equals(request.userId()) &&
-                                  task.getStatus() == Task.TaskStatus.IN_PROGRESS)
-                    .collect(Collectors.toList());
+            List<Task> tasks = taskRepository.findByProjectIdAndAssigneeIdAndStatus(
+                    request.projectId(),
+                    request.userId(),
+                    Task.TaskStatus.IN_PROGRESS
+            );
 
             // 如果没有任务，返回友好提示
             if (tasks.isEmpty()) {
