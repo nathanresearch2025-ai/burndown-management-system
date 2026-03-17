@@ -1,0 +1,872 @@
+{
+	"info": {
+		"_postman_id": "burndown-api-collection",
+		"name": "Burndown Management System API",
+		"description": "Complete API collection for Burndown Management System",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://159.75.202.106:30080/api/v1",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Register",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"testuser\",\n  \"email\": \"test@example.com\",\n  \"password\": \"Password123\",\n  \"fullName\": \"Test User\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/register",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "register"]
+						}
+					}
+				},
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set(\"token\", jsonData.token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"admin\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "login"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Projects",
+			"item": [
+				{
+					"name": "Create Project",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"New Project\",\n  \"description\": \"Project description\",\n  \"projectKey\": \"PROJ\",\n  \"type\": \"SCRUM\",\n  \"visibility\": \"PRIVATE\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/projects",
+							"host": ["{{baseUrl}}"],
+							"path": ["projects"]
+						}
+					}
+				},
+				{
+					"name": "Get All Projects",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/projects",
+							"host": ["{{baseUrl}}"],
+							"path": ["projects"]
+						}
+					}
+				},
+				{
+					"name": "Get Project By ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/projects/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["projects", "1"]
+						}
+					}
+				},
+				{
+					"name": "Get My Projects",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/projects/my-projects",
+							"host": ["{{baseUrl}}"],
+							"path": ["projects", "my-projects"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Sprints",
+			"item": [
+				{
+					"name": "Create Sprint",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"projectId\": 1,\n  \"name\": \"Sprint 1\",\n  \"goal\": \"Complete user authentication\",\n  \"startDate\": \"2024-01-01\",\n  \"endDate\": \"2024-01-14\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/sprints",
+							"host": ["{{baseUrl}}"],
+							"path": ["sprints"]
+						}
+					}
+				},
+				{
+					"name": "Get Sprints By Project",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/sprints/project/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["sprints", "project", "1"]
+						}
+					}
+				},
+				{
+					"name": "Get Sprint By ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/sprints/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["sprints", "1"]
+						}
+					}
+				},
+				{
+					"name": "Start Sprint",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/sprints/1/start",
+							"host": ["{{baseUrl}}"],
+							"path": ["sprints", "1", "start"]
+						}
+					}
+				},
+				{
+					"name": "Complete Sprint",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/sprints/1/complete",
+							"host": ["{{baseUrl}}"],
+							"path": ["sprints", "1", "complete"]
+						}
+					}
+				},
+				{
+					"name": "Predict Sprint Completion",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/sprints/1/completion-probability",
+							"host": ["{{baseUrl}}"],
+							"path": ["sprints", "1", "completion-probability"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Tasks",
+			"item": [
+				{
+					"name": "Create Task",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"projectId\": 1,\n  \"sprintId\": 1,\n  \"title\": \"Implement login feature\",\n  \"description\": \"Create login page and authentication logic\",\n  \"type\": \"TASK\",\n  \"priority\": \"HIGH\",\n  \"storyPoints\": 5,\n  \"assigneeId\": 2\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/tasks",
+							"host": ["{{baseUrl}}"],
+							"path": ["tasks"]
+						}
+					}
+				},
+				{
+					"name": "Get Tasks By Sprint",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/tasks/sprint/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["tasks", "sprint", "1"]
+						}
+					}
+				},
+				{
+					"name": "Get Tasks By Project",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/tasks/project/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["tasks", "project", "1"]
+						}
+					}
+				},
+				{
+					"name": "Get Task By ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/tasks/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["tasks", "1"]
+						}
+					}
+				},
+				{
+					"name": "Update Task Status",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/tasks/1/status?status=IN_PROGRESS",
+							"host": ["{{baseUrl}}"],
+							"path": ["tasks", "1", "status"],
+							"query": [
+								{
+									"key": "status",
+									"value": "IN_PROGRESS"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Update Task",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"projectId\": 1,\n  \"sprintId\": 1,\n  \"title\": \"Updated task title\",\n  \"description\": \"Updated description\",\n  \"type\": \"TASK\",\n  \"priority\": \"MEDIUM\",\n  \"storyPoints\": 3\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/tasks/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["tasks", "1"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "AI Task Generation",
+			"item": [
+				{
+					"name": "Generate Task Description",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"projectId\": 1,\n  \"title\": \"User login optimization\",\n  \"type\": \"FEATURE\",\n  \"priority\": \"HIGH\",\n  \"storyPoints\": 5\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/tasks/ai/generate-description",
+							"host": ["{{baseUrl}}"],
+							"path": ["tasks", "ai", "generate-description"]
+						}
+					}
+				},
+				{
+					"name": "Submit AI Feedback",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"generationLogId\": 1,\n  \"isAccepted\": true,\n  \"rating\": 5,\n  \"comment\": \"Very helpful description\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/tasks/ai/feedback",
+							"host": ["{{baseUrl}}"],
+							"path": ["tasks", "ai", "feedback"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Work Logs",
+			"item": [
+				{
+					"name": "Log Work",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"taskId\": 1,\n  \"workDate\": \"2024-01-15\",\n  \"timeSpent\": 4.5,\n  \"remainingEstimate\": 3.5,\n  \"comment\": \"Completed login UI\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/worklogs",
+							"host": ["{{baseUrl}}"],
+							"path": ["worklogs"]
+						}
+					}
+				},
+				{
+					"name": "Get Work Logs By Task",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/worklogs/task/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["worklogs", "task", "1"]
+						}
+					}
+				},
+				{
+					"name": "Get My Work Logs",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/worklogs/my-worklogs",
+							"host": ["{{baseUrl}}"],
+							"path": ["worklogs", "my-worklogs"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Burndown",
+			"item": [
+				{
+					"name": "Get Burndown Data",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/burndown/sprints/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["burndown", "sprints", "1"]
+						}
+					}
+				},
+				{
+					"name": "Calculate Burndown",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/burndown/sprints/1/calculate",
+							"host": ["{{baseUrl}}"],
+							"path": ["burndown", "sprints", "1", "calculate"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Users",
+			"item": [
+				{
+					"name": "Get All Users",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/users",
+							"host": ["{{baseUrl}}"],
+							"path": ["users"]
+						}
+					}
+				},
+				{
+					"name": "Get User By ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/users/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "1"]
+						}
+					}
+				},
+				{
+					"name": "Get User Roles",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/users/1/roles",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "1", "roles"]
+						}
+					}
+				},
+				{
+					"name": "Get User Permissions",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/users/1/permissions",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "1", "permissions"]
+						}
+					}
+				},
+				{
+					"name": "Assign Roles",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"roleIds\": [2, 3]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/users/1/roles",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "1", "roles"]
+						}
+					}
+				},
+				{
+					"name": "Remove Role",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/users/1/roles/2",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "1", "roles", "2"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Roles",
+			"item": [
+				{
+					"name": "Get All Roles",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/roles",
+							"host": ["{{baseUrl}}"],
+							"path": ["roles"]
+						}
+					}
+				},
+				{
+					"name": "Get Available Roles",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/roles/available",
+							"host": ["{{baseUrl}}"],
+							"path": ["roles", "available"]
+						}
+					}
+				},
+				{
+					"name": "Get Role By ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/roles/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["roles", "1"]
+						}
+					}
+				},
+				{
+					"name": "Create Role",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Custom Role\",\n  \"code\": \"ROLE_CUSTOM\",\n  \"description\": \"Custom role description\",\n  \"permissionIds\": [1, 2, 3]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/roles",
+							"host": ["{{baseUrl}}"],
+							"path": ["roles"]
+						}
+					}
+				},
+				{
+					"name": "Update Role",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Updated Role\",\n  \"description\": \"Updated description\",\n  \"permissionIds\": [1, 2, 3, 4]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/roles/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["roles", "1"]
+						}
+					}
+				},
+				{
+					"name": "Delete Role",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/roles/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["roles", "1"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Permissions",
+			"item": [
+				{
+					"name": "Get All Permissions",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/permissions",
+							"host": ["{{baseUrl}}"],
+							"path": ["permissions"]
+						}
+					}
+				},
+				{
+					"name": "Get Permissions By Resource",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/permissions/resource/PROJECT",
+							"host": ["{{baseUrl}}"],
+							"path": ["permissions", "resource", "PROJECT"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Health Check",
+			"item": [
+				{
+					"name": "Health",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/actuator/health",
+							"host": ["{{baseUrl}}"],
+							"path": ["actuator", "health"]
+						}
+					}
+				},
+				{
+					"name": "Prometheus Metrics",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/actuator/prometheus",
+							"host": ["{{baseUrl}}"],
+							"path": ["actuator", "prometheus"]
+						}
+					}
+				}
+			]
+		}
+	]
+}
