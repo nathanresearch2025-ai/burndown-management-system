@@ -1,28 +1,29 @@
 import asyncio
 from typing import Dict, Any, Optional  # 类型注解
-import httpx
+import aiohttp
 from .config import settings  # 配置读取
 import logging
 
 # 配置日志
 logger = logging.getLogger(__name__)
 
-_async_client: Optional[httpx.AsyncClient] = None
-_client_lock = asyncio.Lock()
+_async_session: Optional[aiohttp.ClientSession] = None
+_session_lock = asyncio.Lock()
 
 
-async def get_async_client() -> httpx.AsyncClient:
-    global _async_client
-    if _async_client is not None:
-        return _async_client
-    async with _client_lock:
-        if _async_client is not None:
-            return _async_client
-        _async_client = httpx.AsyncClient(
-            timeout=httpx.Timeout(connect=3.0, read=20.0, write=10.0, pool=3.0),
-            limits=httpx.Limits(max_connections=50, max_keepalive_connections=20),
-        )
-        return _async_client
+async def get_async_session() -> aiohttp.ClientSession:
+    """获取单例 aiohttp ClientSession，支持连接池复用"""
+    global _async_session
+    if _async_session is not None and not _async_session.closed:
+        return _async_session
+    async with _session_lock:
+        if _async_session is not None and not _async_session.closed:
+            return _async_session
+        # 配置连接池和超时
+        timeout = aiohttp.ClientTimeout(total=30, connect=3, sock_read=20)
+        connector = aiohttp.TCPConnector(limit=50, limit_per_host=20)
+        _async_session = aiohttp.ClientSession(timeout=timeout, connector=connector)
+        return _async_session
 
 
 async def call_backend_tool(path: str, payload: Dict[str, Any], trace_id: Optional[str] = None) -> str:  # 统一封装对后端的工具调用
@@ -33,24 +34,34 @@ async def call_backend_tool(path: str, payload: Dict[str, Any], trace_id: Option
     logger.info(f"Payload: {payload}")
 
     try:
-        client = await get_async_client()
-        headers = {"X-Trace-Id": trace_id} if trace_id else None
-        resp = await client.post(url, json=payload, headers=headers)
+        session = await get_async_session()
+        headers = {"X-Trace-Id": trace_id, "Content-Type": "application/json"} if trace_id else {"Content-Type": "application/json"}
 
-        logger.info(f"Response status: {resp.status_code}")
-        logger.info(f"Response headers: {dict(resp.headers)}")
+        async with session.post(url, json=payload, headers=headers) as resp:
+            logger.info(f"Response status: {resp.status}")
+            logger.info(f"Response headers: {dict(resp.headers)}")
 
-        resp.raise_for_status()  # 若状态码异常则抛出
+            response_text = await resp.text()
 
-        response_text = resp.text
-        logger.info(f"Response body: {response_text[:500]}..." if len(response_text) > 500 else f"Response body: {response_text}")
-        logger.info(f"=== [Backend Tool Call] SUCCESS ===\n")
+            if resp.status >= 400:
+                logger.error(f"HTTP error occurred: {resp.status} {resp.reason}")
+                logger.error(f"Response body: {response_text}")
+                logger.error(f"=== [Backend Tool Call] FAILED ===\n")
+                raise aiohttp.ClientResponseError(
+                    request_info=resp.request_info,
+                    history=resp.history,
+                    status=resp.status,
+                    message=f"Server error '{resp.status} {resp.reason}' for url '{url}'",
+                    headers=resp.headers
+                )
 
-        return response_text  # 返回响应正文（字符串）
+            logger.info(f"Response body: {response_text[:500]}..." if len(response_text) > 500 else f"Response body: {response_text}")
+            logger.info(f"=== [Backend Tool Call] SUCCESS ===\n")
 
-    except httpx.HTTPStatusError as e:
+            return response_text  # 返回响应正文（字符串）
+
+    except aiohttp.ClientResponseError as e:
         logger.error(f"HTTP error occurred: {e}")
-        logger.error(f"Response body: {e.response.text if e.response is not None else ''}")
         logger.error(f"=== [Backend Tool Call] FAILED ===\n")
         raise
     except Exception as e:
