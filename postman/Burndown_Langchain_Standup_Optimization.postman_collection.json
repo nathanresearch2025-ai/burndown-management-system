@@ -1,0 +1,146 @@
+{
+  "info": {
+    "name": "Burndown - LangChain Standup Optimization Scenarios",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Standup (LangChain) - Composite (Tasks + Burndown + Risk)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{jwt_token}}", "disabled": true }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"question\": \"我今天有哪些进行中的任务？另外 Sprint 的燃尽是否偏离计划，有什么风险？\",\n  \"projectId\": {{project_id}},\n  \"sprintId\": {{sprint_id}},\n  \"userId\": {{user_id}},\n  \"timezone\": \"Asia/Shanghai\",\n  \"traceId\": \"pm-composite-{{$randomUUID}}\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/agent/langchain/standup/query",
+          "host": ["{{base_url}}"],
+          "path": ["agent", "langchain", "standup", "query"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Standup (LangChain) - Only Tasks",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{jwt_token}}", "disabled": true }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"question\": \"我今天有哪些进行中的任务？\",\n  \"projectId\": {{project_id}},\n  \"sprintId\": {{sprint_id}},\n  \"userId\": {{user_id}},\n  \"timezone\": \"Asia/Shanghai\",\n  \"traceId\": \"pm-only-tasks-{{$randomUUID}}\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/agent/langchain/standup/query",
+          "host": ["{{base_url}}"],
+          "path": ["agent", "langchain", "standup", "query"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Standup (LangChain) - Only Burndown/Risk",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{jwt_token}}", "disabled": true }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"question\": \"Sprint 当前燃尽是否偏离计划？风险等级是多少？\",\n  \"projectId\": {{project_id}},\n  \"sprintId\": {{sprint_id}},\n  \"userId\": {{user_id}},\n  \"timezone\": \"Asia/Shanghai\",\n  \"traceId\": \"pm-only-burndown-{{$randomUUID}}\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/agent/langchain/standup/query",
+          "host": ["{{base_url}}"],
+          "path": ["agent", "langchain", "standup", "query"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Standup (LangChain) - Missing sprintId (null)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{jwt_token}}", "disabled": true }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"question\": \"帮我总结一下今天的任务和当前风险（不提供 sprintId）\",\n  \"projectId\": {{project_id}},\n  \"sprintId\": null,\n  \"userId\": {{user_id}},\n  \"timezone\": \"Asia/Shanghai\",\n  \"traceId\": \"pm-missing-sprint-{{$randomUUID}}\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/agent/langchain/standup/query",
+          "host": ["{{base_url}}"],
+          "path": ["agent", "langchain", "standup", "query"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Tool - In Progress Tasks",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"projectId\": {{project_id}},\n  \"userId\": {{user_id}}\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/agent/tools/in-progress-tasks",
+          "host": ["{{base_url}}"],
+          "path": ["agent", "tools", "in-progress-tasks"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Tool - Sprint Burndown",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"projectId\": {{project_id}},\n  \"sprintId\": {{sprint_id}}\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/agent/tools/sprint-burndown",
+          "host": ["{{base_url}}"],
+          "path": ["agent", "tools", "sprint-burndown"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Tool - Burndown Risk",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"projectId\": {{project_id}},\n  \"sprintId\": {{sprint_id}}\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/agent/tools/burndown-risk",
+          "host": ["{{base_url}}"],
+          "path": ["agent", "tools", "burndown-risk"]
+        }
+      },
+      "response": []
+    }
+  ]
+}
+
