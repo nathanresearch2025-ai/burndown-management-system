@@ -67,14 +67,26 @@ ai:
   base-url: https://api.deepseek.com
   api-key: sk-0bc064c6fb5d4fd48300705c47d4b11e
   chat-model: deepseek-chat
-  embedding-model: text-embedding-3-small
-  embedding-base-url: https://api.openai.com
-  embedding-api-key: ${OPENAI_API_KEY:}
   timeout: 30s
   max-similar-tasks: 5
   rate-limit:
     max-requests-per-user: 50
     window-minutes: 10
+  embedding:
+    provider: simple  # Options: simple (本地), djl (本地DJL), api (外部API)
+    # Simple local embedding configuration (推荐 - 无需外部依赖)
+    simple:
+      algorithm: TF-IDF + Hashing
+      dimension: 384
+    # DJL local embedding configuration
+    djl:
+      model-name: sentence-transformers/all-MiniLM-L6-v2
+      hf-token: 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
+    # API-based embedding configuration (fallback)
+    api:
+      embedding-model: text-embedding-3-small
+      embedding-base-url: https://api.deepseek.com
+      embedding-api-key: sk-0bc064c6fb5d4fd48300705c47d4b11e
 
 langchain:
   enabled: true

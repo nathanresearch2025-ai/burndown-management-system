@@ -21,19 +21,19 @@ import java.util.Map;
  */
 @Slf4j
 @Service
-@ConditionalOnProperty(prefix = "ai", name = "enabled", havingValue = "true")
+@ConditionalOnProperty(prefix = "ai.embedding", name = "provider", havingValue = "api")
 public class EmbeddingService {
 
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
 
-    @Value("${ai.embedding-base-url:${ai.base-url}}")
+    @Value("${ai.embedding.api.embedding-base-url:${ai.base-url}}")
     private String embeddingBaseUrl;
 
-    @Value("${ai.embedding-api-key:${ai.api-key}}")
+    @Value("${ai.embedding.api.embedding-api-key:${ai.api-key}}")
     private String embeddingApiKey;
 
-    @Value("${ai.embedding-model:text-embedding-3-small}")
+    @Value("${ai.embedding.api.embedding-model:text-embedding-3-small}")
     private String embeddingModel;
 
     @Value("${ai.timeout:30s}")

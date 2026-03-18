@@ -41,7 +41,9 @@ public class SecurityConfig {
                                 "/swagger-ui/**",
                                 "/api-docs/**",
                                 "/actuator/**",
-                                "/agent/tools/**"
+                                "/agent/tools/**",
+                                "/embeddings/**",
+                                "/similarity/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

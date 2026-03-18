@@ -20,9 +20,9 @@ import java.util.List;
 public class TaskEmbeddingBatchService {
 
     private final TaskRepository taskRepository;
-    private final EmbeddingService embeddingService;
+    private final UnifiedEmbeddingService embeddingService;
 
-    public TaskEmbeddingBatchService(TaskRepository taskRepository, EmbeddingService embeddingService) {
+    public TaskEmbeddingBatchService(TaskRepository taskRepository, UnifiedEmbeddingService embeddingService) {
         this.taskRepository = taskRepository;
         this.embeddingService = embeddingService;
     }

@@ -39,7 +39,7 @@ public class TaskAiService {
     private final ProjectRepository projectRepository;
     private final AiTaskGenerationLogRepository aiTaskGenerationLogRepository;
     private final AiClientService aiClientService;
-    private final EmbeddingService embeddingService;
+    private final UnifiedEmbeddingService embeddingService;
     private final ObjectMapper objectMapper;
     private final Counter requestCounter;
     private final Counter successCounter;
@@ -57,7 +57,7 @@ public class TaskAiService {
                          ProjectRepository projectRepository,
                          AiTaskGenerationLogRepository aiTaskGenerationLogRepository,
                          AiClientService aiClientService,
-                         @Autowired(required = false) EmbeddingService embeddingService,
+                         @Autowired(required = false) UnifiedEmbeddingService embeddingService,
                          ObjectMapper objectMapper,
                          Counter aiGenerationRequestCounter,
                          Counter aiGenerationSuccessCounter,
