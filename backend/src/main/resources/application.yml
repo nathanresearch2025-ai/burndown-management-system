@@ -81,12 +81,12 @@ ai:
     # DJL local embedding configuration
     djl:
       model-name: sentence-transformers/all-MiniLM-L6-v2
-      hf-token: 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
+      hf-token: ${HF_TOKEN:}
     # API-based embedding configuration (fallback)
     api:
       embedding-model: text-embedding-3-small
-      embedding-base-url: https://api.deepseek.com
-      embedding-api-key: sk-0bc064c6fb5d4fd48300705c47d4b11e
+      embedding-base-url: ${EMBEDDING_BASE_URL:}
+      embedding-api-key: ${EMBEDDING_API_KEY:}
 
 langchain:
   enabled: true
