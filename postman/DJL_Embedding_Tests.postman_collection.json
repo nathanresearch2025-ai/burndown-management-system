@@ -1,0 +1,875 @@
+{
+	"info": {
+		"_postman_id": "djl-embedding-test-collection",
+		"name": "DJL Local Embedding Tests",
+		"description": "DJL 本地向量生成功能测试集合 - 包含服务状态检查、向量生成测试、性能测试等",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Service Management",
+			"item": [
+				{
+					"name": "Get Embedding Provider Info",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has provider info\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('provider');",
+									"    pm.expect(jsonData).to.have.property('status');",
+									"});",
+									"",
+									"pm.test(\"Provider is DJL\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.provider).to.eql('djl');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/embeddings/info",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"embeddings",
+								"info"
+							]
+						},
+						"description": "获取当前向量服务的配置信息，包括提供者类型、模型名称、引擎类型和加载状态"
+					},
+					"response": []
+				}
+			],
+			"description": "向量服务管理相关接口"
+		},
+		{
+			"name": "2. Basic Embedding Tests",
+			"item": [
+				{
+					"name": "Test English Text Embedding",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Embedding generated successfully\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    pm.expect(jsonData.dimension).to.eql(384);",
+									"});",
+									"",
+									"pm.test(\"Response time is acceptable\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.durationMs).to.be.below(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"text\": \"Implement user authentication feature with JWT token\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/embeddings/test",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"embeddings",
+								"test"
+							]
+						},
+						"description": "测试英文文本的向量生成"
+					},
+					"response": []
+				},
+				{
+					"name": "Test Chinese Text Embedding",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Embedding generated successfully\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    pm.expect(jsonData.dimension).to.eql(384);",
+									"});",
+									"",
+									"pm.test(\"Response time is acceptable\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.durationMs).to.be.below(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"text\": \"实现用户登录功能，包括密码加密和JWT令牌生成\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/embeddings/test",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"embeddings",
+								"test"
+							]
+						},
+						"description": "测试中文文本的向量生成"
+					},
+					"response": []
+				},
+				{
+					"name": "Test Mixed Language Embedding",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Embedding generated successfully\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    pm.expect(jsonData.dimension).to.eql(384);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"text\": \"实现 RESTful API 接口，支持 CRUD 操作和分页查询功能\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/embeddings/test",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"embeddings",
+								"test"
+							]
+						},
+						"description": "测试中英文混合文本的向量生成"
+					},
+					"response": []
+				},
+				{
+					"name": "Test Long Text Embedding",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Embedding generated successfully\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    pm.expect(jsonData.dimension).to.eql(384);",
+									"});",
+									"",
+									"pm.test(\"Long text processing time\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    console.log('Long text processing time: ' + jsonData.durationMs + 'ms');",
+									"    pm.expect(jsonData.durationMs).to.be.below(300);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"text\": \"Title: User Authentication System\\nDescription: Implement a comprehensive user authentication system with the following features: 1) User registration with email verification, 2) Secure password hashing using BCrypt algorithm, 3) JWT token generation and validation, 4) Token refresh mechanism, 5) Role-based access control (RBAC), 6) Session management with Redis, 7) Login attempt tracking and account lockout, 8) Password reset functionality via email.\\nType: FEATURE\\nPriority: HIGH\\nStory Points: 13\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/embeddings/test",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"embeddings",
+								"test"
+							]
+						},
+						"description": "测试长文本（包含任务元数据）的向量生成"
+					},
+					"response": []
+				},
+				{
+					"name": "Test Short Text Embedding",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Embedding generated successfully\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"text\": \"登录\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/embeddings/test",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"embeddings",
+								"test"
+							]
+						},
+						"description": "测试极短文本的向量生成"
+					},
+					"response": []
+				}
+			],
+			"description": "基础向量生成测试，包括不同语言和长度的文本"
+		},
+		{
+			"name": "3. Edge Cases",
+			"item": [
+				{
+					"name": "Test Empty Text (Should Fail)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test(\"Error message returned\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('error');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"text\": \"\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/embeddings/test",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"embeddings",
+								"test"
+							]
+						},
+						"description": "测试空文本，应该返回错误"
+					},
+					"response": []
+				},
+				{
+					"name": "Test Special Characters",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Embedding generated successfully\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"text\": \"Fix bug: @#$%^&*() 特殊字符测试 <script>alert('xss')</script>\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/embeddings/test",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"embeddings",
+								"test"
+							]
+						},
+						"description": "测试包含特殊字符的文本"
+					},
+					"response": []
+				},
+				{
+					"name": "Test Code Snippet",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Embedding generated successfully\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"text\": \"public class User { private String username; private String password; public User(String username, String password) { this.username = username; this.password = password; } }\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/embeddings/test",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"embeddings",
+								"test"
+							]
+						},
+						"description": "测试代码片段的向量生成"
+					},
+					"response": []
+				}
+			],
+			"description": "边界情况和异常测试"
+		},
+		{
+			"name": "4. AI Task Generation with Vector Search",
+			"item": [
+				{
+					"name": "Login to Get Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Token received\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('token');",
+									"    pm.environment.set('auth_token', jsonData.token);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"admin\",\n    \"password\": \"admin123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "登录获取 JWT Token"
+					},
+					"response": []
+				},
+				{
+					"name": "Generate Task Description (Vector Search)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Description generated\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('description');",
+									"    pm.expect(jsonData).to.have.property('similarTasks');",
+									"    pm.expect(jsonData).to.have.property('generatedBy');",
+									"});",
+									"",
+									"pm.test(\"Similar tasks found\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    console.log('Found ' + jsonData.similarTasks.length + ' similar tasks');",
+									"    console.log('Generated by: ' + jsonData.generatedBy);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"projectId\": 1,\n    \"title\": \"优化数据库查询性能\",\n    \"type\": \"TASK\",\n    \"priority\": \"HIGH\",\n    \"storyPoints\": 5\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/tasks/ai/generate-description",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"tasks",
+								"ai",
+								"generate-description"
+							]
+						},
+						"description": "使用向量相似度搜索生成任务描述"
+					},
+					"response": []
+				},
+				{
+					"name": "Generate Task Description - Feature",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Description generated\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('description');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"projectId\": 1,\n    \"title\": \"实现用户权限管理功能\",\n    \"type\": \"FEATURE\",\n    \"priority\": \"HIGH\",\n    \"storyPoints\": 8\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/tasks/ai/generate-description",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"tasks",
+								"ai",
+								"generate-description"
+							]
+						},
+						"description": "生成功能类型任务描述"
+					},
+					"response": []
+				},
+				{
+					"name": "Generate Task Description - Bug Fix",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Description generated\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('description');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"projectId\": 1,\n    \"title\": \"修复登录页面验证码不显示的问题\",\n    \"type\": \"BUG\",\n    \"priority\": \"CRITICAL\",\n    \"storyPoints\": 3\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/tasks/ai/generate-description",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"tasks",
+								"ai",
+								"generate-description"
+							]
+						},
+						"description": "生成 Bug 修复任务描述"
+					},
+					"response": []
+				}
+			],
+			"description": "AI 任务生成功能测试，使用向量相似度搜索"
+		},
+		{
+			"name": "5. Performance Tests",
+			"item": [
+				{
+					"name": "Performance Test - Iteration 1",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Record performance\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    console.log('Iteration 1 - Duration: ' + jsonData.durationMs + 'ms');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"text\": \"Performance test iteration 1 - Testing embedding generation speed\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/embeddings/test",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"embeddings",
+								"test"
+							]
+						},
+						"description": "性能测试 - 第1次迭代"
+					},
+					"response": []
+				},
+				{
+					"name": "Performance Test - Iteration 2",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Record performance\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    console.log('Iteration 2 - Duration: ' + jsonData.durationMs + 'ms');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"text\": \"Performance test iteration 2 - Testing embedding generation speed\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/embeddings/test",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"embeddings",
+								"test"
+							]
+						},
+						"description": "性能测试 - 第2次迭代"
+					},
+					"response": []
+				},
+				{
+					"name": "Performance Test - Iteration 3",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Record performance\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    console.log('Iteration 3 - Duration: ' + jsonData.durationMs + 'ms');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"text\": \"Performance test iteration 3 - Testing embedding generation speed\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/embeddings/test",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"embeddings",
+								"test"
+							]
+						},
+						"description": "性能测试 - 第3次迭代"
+					},
+					"response": []
+				},
+				{
+					"name": "Performance Test - Chinese Text",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Record Chinese text performance\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    console.log('Chinese text - Duration: ' + jsonData.durationMs + 'ms');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"text\": \"性能测试 - 测试中文文本向量生成速度和准确性\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/embeddings/test",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"embeddings",
+								"test"
+							]
+						},
+						"description": "性能测试 - 中文文本"
+					},
+					"response": []
+				}
+			],
+			"description": "性能测试，评估向量生成速度"
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8080/api/v1",
+			"type": "string"
+		},
+		{
+			"key": "auth_token",
+			"value": "",
+			"type": "string"
+		}
+	]
+}
