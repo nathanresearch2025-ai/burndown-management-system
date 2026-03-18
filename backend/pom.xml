@@ -140,6 +140,42 @@
             <artifactId>hypersistence-utils-hibernate-63</artifactId>
             <version>3.7.3</version>
         </dependency>
+
+        <!-- DJL (Deep Java Library) for local embeddings -->
+        <dependency>
+            <groupId>ai.djl</groupId>
+            <artifactId>api</artifactId>
+            <version>0.28.0</version>
+        </dependency>
+        <dependency>
+            <groupId>ai.djl.huggingface</groupId>
+            <artifactId>tokenizers</artifactId>
+            <version>0.28.0</version>
+        </dependency>
+        <dependency>
+            <groupId>ai.djl.pytorch</groupId>
+            <artifactId>pytorch-engine</artifactId>
+            <version>0.28.0</version>
+        </dependency>
+        <dependency>
+            <groupId>ai.djl.pytorch</groupId>
+            <artifactId>pytorch-model-zoo</artifactId>
+            <version>0.28.0</version>
+        </dependency>
+        <!-- PyTorch native library (CPU version for cross-platform) -->
+        <dependency>
+            <groupId>ai.djl.pytorch</groupId>
+            <artifactId>pytorch-native-cpu</artifactId>
+            <version>2.1.1</version>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- Dotenv for environment variable management -->
+        <dependency>
+            <groupId>io.github.cdimascio</groupId>
+            <artifactId>dotenv-java</artifactId>
+            <version>3.0.0</version>
+        </dependency>
     </dependencies>
 
     <build>

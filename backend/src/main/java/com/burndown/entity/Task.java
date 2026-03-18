@@ -1,9 +1,11 @@
 package com.burndown.entity;
 
+import com.burndown.config.PGvectorType;
 import com.pgvector.PGvector;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.Type;
 import org.hibernate.type.SqlTypes;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -78,7 +80,8 @@ public class Task {
     @Column(name = "custom_fields", columnDefinition = "jsonb")
     private String customFields = "{}";
 
-    @Column(name = "embedding", columnDefinition = "vector(1536)")
+    @Type(PGvectorType.class)
+    @Column(name = "embedding", columnDefinition = "vector(384)")
     private PGvector embedding;
 
     @CreatedDate
