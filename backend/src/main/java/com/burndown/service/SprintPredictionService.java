@@ -126,8 +126,28 @@ public class SprintPredictionService {
 
         // ==================== 第2类：Sprint 容量特征 ====================
         // 从 Sprint 实体中提取故事点信息，处理 null 值并转换为 double
+        /*
+        Real-World Scenario Simulation
+        Scenario Setup:
+        A team is in a 10-working-day Sprint.
+        • Committed Story Points: 50 points.
+        • Ideal Velocity: 5 points per day on average.
+        Phase A: Day 3 of the Sprint (Optimistic Forecast)
+        • Status: 20 points completed, 30 points remaining.
+        • Impact on Forecast:
+        At this stage, the team’s actual burn rate is $20 / 3 = 6.67$ points/day. If this pace is maintained, the remaining 30 points will only take about 4.5 days to complete.
+        • Conclusion: The forecast is highly optimistic. The team may even have the capacity to pull in the next task from the Backlog early.
+        Phase B: Day 7 of the Sprint (Risk Warning)
+        • Status: 25 points completed, 25 points remaining.
+        • Impact on Forecast:
+        70% of the time has elapsed, yet only 50% of the tasks are finished. The current actual velocity is $25 / 7 = 3.57$ points/day.
+        At this rate, finishing the remaining 25 points would require 7 days, but only 3 days are left in the Sprint.
+        Conclusion: A significant deviation has occurred. The Scrum Master needs to intervene at this point to coordinate "descoping"
+        (moving non-core stories out of the Sprint) or reallocating resources; otherwise, the Sprint goal will not be met.
+        * */
+
         double committedSp = sprint.getCommittedPoints() != null ? sprint.getCommittedPoints().doubleValue() : 0.0;  // 初始承诺的故事点
-        double completedSp = sprint.getCompletedPoints() != null ? sprint.getCommittedPoints().doubleValue() : 0.0;  // 已完成的故事点
+        double completedSp = sprint.getCompletedPoints() != null ? sprint.getCompletedPoints().doubleValue() : 0.0;  // 已完成的故事点
         double remainingSp = Math.max(0, committedSp - completedSp);                                                 // 剩余故事点（确保非负）
 
         // 存储容量相关特征

@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-本文件为 Claude Code (claude.ai/code) 在此代码仓库中工作时提供指导。
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## 项目概述
 
@@ -62,9 +62,14 @@ npm run preview
 # 创建数据库
 psql -U postgres -c "CREATE DATABASE burndown_db;"
 
+# 启用 pgvector 扩展（必须，任务实体使用 vector(384) 列）
+psql -U postgres -d burndown_db -c "CREATE EXTENSION IF NOT EXISTS vector;"
+
 # 初始化 schema 和数据
 psql -U postgres -d burndown_db -f backend/init.sql
 ```
+
+**重要：** `application.yml` 中的数据源默认指向远程 K8s PostgreSQL（`159.75.202.106:30432`）和 Redis（`159.75.202.106:30379`）。本地开发时需要覆盖这些地址，可通过环境变量或 `application-local.yml` Profile。
 
 ### 部署
 
@@ -220,6 +225,35 @@ docker images | grep burndown
 ./deploy.sh
 ```
 
+## AI Agent 架构（Standup 助手）
+
+系统包含一个 Scrum 日常站会 AI 助手，基于 ReAct 模式构建：
+
+**两套实现并存：**
+1. **Java 原生 ReAct Agent**（`aiagent/standup/`）— Spring AI Function Calling，注册了 3 个工具函数，由 `StandupAgentService` 编排 ReAct 循环
+2. **LangChain Python Sidecar**（`aiagent/langchain/`）— Java 通过 `LangchainClientService` 调用运行在 `:8091` 的 FastAPI 服务
+
+**Agent 工具类（`aiagent/standup/tool/`）：**
+- `StandupTaskTools` — 查询任务状态、阻塞项
+- `StandupBurndownTools` — 查询燃尽图数据点、偏差计算
+- `StandupRiskTools` — 风险评估
+
+**Agent 端点：**
+- Java 原生：`POST /api/v1/agent/standup/query`
+- LangChain 代理：`POST /api/v1/langchain/standup/query`
+- LangChain 工具回调：`POST /api/v1/agent/tools/*`（Python sidecar 回调此端点获取数据）
+
+**会话持久化：** `AgentChatSession`、`AgentChatMessage`、`AgentToolCallLog` 三张表记录对话和工具调用历史。
+
+**监控：** `StandupAgentMetrics` 注册 Micrometer 计数器/计时器，暴露至 Prometheus。
+
+**LangChain Python Sidecar 启动（如需本地运行）：**
+```bash
+# 在 langchain-python/ 目录下（如果存在）
+pip install -r requirements.txt
+uvicorn app.main:app --host 0.0.0.0 --port 8091
+```
+
 ## AI 任务生成功能
 
 系统包含使用 RAG（检索增强生成）的 AI 驱动任务描述生成功能：
@@ -254,10 +288,37 @@ POST /api/v1/tasks/ai/generate-description
 ```
 
 **当前限制：**
-- 使用简单的基于关键词的相似度（尚未使用向量嵌入/pgvector）
 - 未实现 Redis 缓存
 - 未实现速率限制
 - 前端 UI 集成待完成
+
+## ML Sprint 预测功能
+
+**Random Forest 模型（scikit-learn）：**
+- 模型文件：`backend/src/main/resources/models/random_forest_model.pkl`
+- 特征配置：`backend/src/main/resources/models/feature_columns.json`
+- `PythonModelService` 在启动时（`@PostConstruct`）将模型文件解压到临时目录，并生成内联 Python 推理脚本，通过 `ProcessBuilder` 调用 Python 进程执行推理
+- **Python 可执行路径配置**（`application.yml`）：
+  ```yaml
+  ml:
+    python:
+      executable: python  # 默认值；Windows 本地开发可能需要改为完整路径
+  ```
+- 预测端点：`GET /api/v1/sprints/{id}/predict`
+- 训练代码：`docs/ml/randomForest/train_model.py` 和 `docs/ml/randomForest/sprint_rf_training.ipynb`
+
+**输入特征（11 个）：** `sprint_days`, `days_elapsed`, `committed_sp`, `remaining_sp`, `completed_sp`, `velocity_current`, `velocity_avg_5`, `velocity_std_5`, `blocked_stories`, `attendance_rate`, `ratio_feature`
+
+## 向量相似度搜索
+
+`Task` 实体包含 `vector(384)` 列（需要 PostgreSQL `pgvector` 扩展）。
+
+**Embedding 提供者（`ai.embedding.provider`）：**
+- `simple`（默认）：本地 TF-IDF + Hashing，无外部依赖
+- `djl`：Deep Java Library 本地模型
+- `api`：外部 Embedding API
+
+`UnifiedEmbeddingService` 仅在 `ai.enabled=true` 时激活（`@ConditionalOnProperty`）。`VectorSimilarityService` 使用 pgvector 的 `<->` 运算符执行近邻查询。
 
 ## 异常处理
 
@@ -293,7 +354,7 @@ POST /api/v1/tasks/ai/generate-description
 
 ## 数据库 Schema 管理
 
-**关键规则：** 所有 schema 更改必须添加到 `/myapp/backend/init.sql`
+**关键规则：** 所有 schema 更改必须添加到 `backend/init.sql`
 
 应用使用 `ddl-auto: none`，意味着 Hibernate 不会自动生成 schema。`init.sql` 文件是以下内容的唯一真实来源：
 - 表定义
@@ -309,13 +370,13 @@ POST /api/v1/tasks/ai/generate-description
 ## 测试和性能
 
 **测试资源：**
-- 压力测试脚本：`/myapp/test/pressure/scenario_pressure_test.py`
-- 压力测试报告：`/myapp/test/pressure/summary_report.html`
-- 完整 API 测试套件：`/myapp/test/all-interface-test/api_test.py`
-- 性能优化文档：`/myapp/docs/performance/`
+- 压力测试脚本：`test/pressure/scenario_pressure_test.py`
+- 压力测试报告：`test/pressure/summary_report.html`
+- 完整 API 测试套件：`test/all-interface-test/api_test.py`
+- 性能优化文档：`docs/performance/`
 
 **AI 功能文档：**
-- PRD 和需求：`/myapp/docs/ai-agent/`
+- PRD 和需求：`docs/ai-agent/`
 
 ## 前端 API 集成
 
@@ -343,8 +404,5 @@ POST /api/v1/tasks/ai/generate-description
 - 存储在 Zustand 中以进行响应式 UI 更新
 - 用于 UI 元素的条件渲染
 
-- 每一句prompt后面都自动补充多一句 "持续监控，一步步显示"
-
-我的需求文档在这个目录下 /myapp/docs
-
-后端代码的目录在D:\java\claude\projects\2\backend\下
+- 需求文档目录：`docs/`（AI Agent 相关文档在 `docs/ai-agent/`，ML 相关在 `docs/ml/`）
+- 后端代码目录：`backend/src/main/java/com/burndown/`

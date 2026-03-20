@@ -80,6 +80,7 @@ public class StandupBurndownTools {
      */
     @Description("获取 Sprint 的燃尽图数据，包括计划剩余和实际剩余工时")
     //@org.springframework.ai.tool.annotation.Tool(name = "getSprintBurndown", description = "获取 Sprint 的燃尽图数据")
+    //默认情况下，方法的名称就是工具的名称
     public String getSprintBurndown(GetSprintBurndownRequest request) {
         log.info("Tool called: getSprintBurndown - sprintId: {}", request.sprintId());
 

@@ -80,6 +80,7 @@ public class Task {
     @Column(name = "custom_fields", columnDefinition = "jsonb")
     private String customFields = "{}";
 
+    //在 PostgreSQL 的 pgvector 扩展中，vector(384) 表示该字段只能存储长度正好为 384 的浮点数数组。
     @Type(PGvectorType.class)
     @Column(name = "embedding", columnDefinition = "vector(384)")
     private PGvector embedding;

@@ -136,6 +136,7 @@ public class VectorSimilarityService {
                             task.getPriority().name()
                     );
 
+                    //简单来说，将数据组装成 PGvector 类型，正是为了让 Java 程序中的向量数据能够被 PostgreSQL 的 pgvector 扩展插件所识别并存储。
                     PGvector embedding = embeddingService.generateEmbedding(embeddingText);
                     task.setEmbedding(embedding);
                     taskRepository.save(task);

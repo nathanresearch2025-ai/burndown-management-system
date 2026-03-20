@@ -420,10 +420,10 @@ INSERT INTO projects (name, description, project_key, type, visibility, owner_id
                                                                                                              ('数据分析平台', '构建企业级数据分析平台，支持实时数据处理和可视化', 'DATA', 'KANBAN', 'PRIVATE', (SELECT id FROM users WHERE username = 'admin'), 'PLANNING', '2024-03-01', '2024-12-31', NOW(), NOW());
 
 -- Insert sample sprints
-INSERT INTO sprints (project_id, name, goal, start_date, end_date, status, created_at, updated_at) VALUES
-                                                                                                       ((SELECT id FROM projects WHERE name = '电商平台重构'), 'Sprint 1 - 用户服务', '完成用户服务的微服务拆分和基础功能开发', '2024-01-01', '2024-01-14', 'COMPLETED', NOW(), NOW()),
-                                                                                                       ((SELECT id FROM projects WHERE name = '电商平台重构'), 'Sprint 2 - 订单服务', '完成订单服务的开发和与用户服务的集成', '2024-01-15', '2024-01-28', 'ACTIVE', NOW(), NOW()),
-                                                                                                       ((SELECT id FROM projects WHERE name = '移动端App开发'), 'Sprint 1 - 基础框架', '搭建移动端基础框架和通用组件', '2024-02-01', '2024-02-14', 'ACTIVE', NOW(), NOW());
+INSERT INTO sprints (project_id, name, goal, start_date, end_date, status, total_capacity, committed_points, completed_points, velocity, created_at, updated_at) VALUES
+                                                                                                       ((SELECT id FROM projects WHERE name = '电商平台重构'), 'Sprint 1 - 用户服务', '完成用户服务的微服务拆分和基础功能开发', '2024-01-01', '2024-01-14', 'COMPLETED', 80.0, 50.0, 48.0, 3.43, NOW(), NOW()),
+                                                                                                       ((SELECT id FROM projects WHERE name = '电商平台重构'), 'Sprint 2 - 订单服务', '完成订单服务的开发和与用户服务的集成', '2024-01-15', '2024-01-28', 'ACTIVE', 80.0, 55.0, 25.0, NULL, NOW(), NOW()),
+                                                                                                       ((SELECT id FROM projects WHERE name = '移动端App开发'), 'Sprint 1 - 基础框架', '搭建移动端基础框架和通用组件', '2024-02-01', '2024-02-14', 'ACTIVE', 70.0, 40.0, 15.0, NULL, NOW(), NOW());
 
 -- Insert sample tasks for Sprint 1 (电商平台重构)
 INSERT INTO tasks (project_id, sprint_id, task_key, title, description, type, assignee_id, reporter_id, status, priority, story_points, original_estimate, time_spent, created_at, updated_at) VALUES

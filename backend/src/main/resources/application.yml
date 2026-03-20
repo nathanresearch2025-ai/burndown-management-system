@@ -100,6 +100,10 @@ agent:
     response-timeout: 30s
     require-evidence: true
 
+ml:
+  python:
+    executable: C:\Users\37309\AppData\Local\Programs\Python\Python314\python.exe  # Windows: python, python3, py 或完整路径
+
 springdoc:
   api-docs:
     path: /api-docs
