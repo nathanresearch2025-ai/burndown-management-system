@@ -25,8 +25,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Sprint 完成预测服务
- * 使用训练好的随机森林模型进行预测
+ * Sprint completion prediction service.
+ * Uses a trained Random Forest model for predictions.
  */
 @Slf4j
 @Service
@@ -44,88 +44,88 @@ public class SprintPredictionService {
     public void init() {
         try {
             loadFeatureColumns();
-            log.info("Sprint 预测服务初始化完成，特征列数: {}", featureColumns.size());
+            log.info("Sprint prediction service initialized successfully. Feature column count: {}", featureColumns.size());
         } catch (Exception e) {
-            log.error("Sprint 预测服务初始化失败", e);
+            log.error("Sprint prediction service initialization failed", e);
         }
     }
 
     /**
-     * 预测 Sprint 完成概率 - 核心业务方法
+     * Predict the completion probability for a Sprint — core business method.
      *
-     * @param sprintId Sprint 的唯一标识符
-     * @return SprintCompletionPredictionDto 包含预测概率、风险等级和特征摘要的完整预测结果
-     * @throws BusinessException 当 Sprint 不存在时抛出 404 异常
+     * @param sprintId the unique identifier of the Sprint
+     * @return SprintCompletionPredictionDto containing the predicted probability, risk level, and feature summary
+     * @throws BusinessException 404 exception when the Sprint does not exist
      */
     public SprintCompletionPredictionDto predictSprintCompletion(Long sprintId) {
-        // 第1步：从数据库查询 Sprint 实体
-        // 使用 Optional.orElseThrow() 确保 Sprint 存在，不存在则抛出业务异常
+        // Step 1: Query the Sprint entity from the database.
+        // Use Optional.orElseThrow() to ensure the Sprint exists; throw a business exception if not found.
         Sprint sprint = sprintRepository.findById(sprintId)
                 .orElseThrow(() -> new BusinessException("SPRINT_NOT_FOUND", "Sprint not found: " + sprintId, HttpStatus.NOT_FOUND));
 
-        // 第2步：特征工程 - 计算机器学习模型所需的19个特征向量
-        // 包括时间特征、容量特征、速度特征、任务特征等
+        // Step 2: Feature engineering — compute the 19 feature values required by the ML model.
+        // Includes time features, capacity features, velocity features, and task features.
         Map<String, Double> features = calculateFeatures(sprint);
 
-        // 第3步：模型推理 - 调用 Python 随机森林模型进行预测
-        // 通过 ProcessBuilder 执行 Python 脚本，传入特征向量，返回完成概率 [0.0, 1.0]
+        // Step 3: Model inference — invoke the Python Random Forest model for prediction.
+        // Executes the Python script via ProcessBuilder, passing the feature vector, and returns completion probability [0.0, 1.0].
         double probability = pythonModelService.predictSprintCompletion(features, featureColumns);
 
-        // 第4步：风险等级映射 - 将数值概率转换为业务可理解的风险等级
+        // Step 4: Risk level mapping — convert the numeric probability to a business-readable risk level.
         // GREEN: >=0.8, YELLOW: 0.5-0.8, RED: <0.5
         String riskLevel = mapRiskLevel(probability);
 
-        // 第5步：构建特征摘要 - 提取关键特征用于前端展示和业务分析
-        // 包括时间进度、剩余工作量、速度对比等核心指标
+        // Step 5: Build feature summary — extract key features for frontend display and business analysis.
+        // Includes time progress, remaining workload, velocity comparison, and other core metrics.
         SprintCompletionPredictionDto.FeatureSummary featureSummary = buildFeatureSummary(features);
 
-        // 第6步：构建并返回完整的预测结果对象
-        // 使用 Builder 模式创建不可变的响应对象
+        // Step 6: Build and return the complete prediction result object.
+        // Use the Builder pattern to create an immutable response object.
         return SprintCompletionPredictionDto.builder()
-                .probability(probability)           // 完成概率 [0.0, 1.0]
-                .riskLevel(riskLevel)              // 风险等级 GREEN/YELLOW/RED
-                .featureSummary(featureSummary)    // 特征摘要对象
-                .predictedAt(System.currentTimeMillis())  // 预测时间戳（毫秒）
+                .probability(probability)           // completion probability [0.0, 1.0]
+                .riskLevel(riskLevel)              // risk level: GREEN/YELLOW/RED
+                .featureSummary(featureSummary)    // feature summary object
+                .predictedAt(System.currentTimeMillis())  // prediction timestamp (milliseconds)
                 .build();
     }
 
     /**
-     * 计算 Sprint 特征向量 - 机器学习模型的核心输入
+     * Calculate the Sprint feature vector — the core input for the ML model.
      *
-     * 该方法从 Sprint 实体和相关数据中提取19个特征，分为4大类：
-     * 1. 时间特征（4个）：Sprint 持续时间、已消耗时间、剩余时间、时间进度比例
-     * 2. 容量特征（4个）：承诺故事点、已完成故事点、剩余故事点、完成比例
-     * 3. 速度特征（4个）：当前速度、历史平均速度、速度标准差、速度差异
-     * 4. 任务特征（7个）：阻断任务数、任务类型分布、出勤率等
+     * Extracts 19 features from the Sprint entity and related data, divided into 4 groups:
+     * 1. Time features (4): Sprint duration, elapsed time, remaining time, time-progress ratio
+     * 2. Capacity features (4): committed story points, completed story points, remaining story points, completion ratio
+     * 3. Velocity features (4): current velocity, historical average velocity, velocity std dev, velocity gap
+     * 4. Task features (7): blocked task count, task type distribution, attendance rate, etc.
      *
-     * @param sprint Sprint 实体对象，包含基础的 Sprint 信息
-     * @return Map<String, Double> 特征名称到特征值的映射，共19个特征
+     * @param sprint Sprint entity containing basic Sprint information
+     * @return Map<String, Double> mapping of feature names to feature values (19 features total)
      */
     private Map<String, Double> calculateFeatures(Sprint sprint) {
-        // 初始化特征向量容器
+        // Initialize the feature vector container.
         Map<String, Double> features = new HashMap<>();
 
-        // ==================== 第1类：基础时间特征 ====================
-        // 获取当前日期作为计算基准点
+        // ==================== Group 1: Basic time features ====================
+        // Use the current date as the calculation reference point.
         LocalDate now = LocalDate.now();
 
-        // 计算 Sprint 总持续天数（从开始日期到结束日期）
+        // Calculate total Sprint duration in days (start date to end date).
         long totalDays = ChronoUnit.DAYS.between(sprint.getStartDate(), sprint.getEndDate());
 
-        // 计算已消耗天数（从开始日期到当前日期）
+        // Calculate elapsed days (start date to current date).
         long elapsedDays = ChronoUnit.DAYS.between(sprint.getStartDate(), now);
 
-        // 计算剩余天数（从当前日期到结束日期），确保不为负数
+        // Calculate remaining days (current date to end date), clamped to non-negative.
         long remainingDays = Math.max(0, ChronoUnit.DAYS.between(now, sprint.getEndDate()));
 
-        // 存储时间相关特征
-        features.put("sprint_days", (double) totalDays);                                    // Sprint 总天数
-        features.put("days_elapsed", (double) Math.max(1, elapsedDays));                  // 已消耗天数（最小为1，避免除零）
-        features.put("days_remaining", (double) remainingDays);                           // 剩余天数
-        features.put("elapsed_ratio", elapsedDays / (double) Math.max(1, totalDays));    // 时间消耗比例 [0.0, 1.0]
+        // Store time-related features.
+        features.put("sprint_days", (double) totalDays);                                    // total Sprint days
+        features.put("days_elapsed", (double) Math.max(1, elapsedDays));                  // elapsed days (min 1 to avoid divide-by-zero)
+        features.put("days_remaining", (double) remainingDays);                           // remaining days
+        features.put("elapsed_ratio", elapsedDays / (double) Math.max(1, totalDays));    // time-consumed ratio [0.0, 1.0]
 
-        // ==================== 第2类：Sprint 容量特征 ====================
-        // 从 Sprint 实体中提取故事点信息，处理 null 值并转换为 double
+        // ==================== Group 2: Sprint capacity features ====================
+        // Extract story point information from the Sprint entity, handling null values and converting to double.
         /*
         Real-World Scenario Simulation
         Scenario Setup:
@@ -146,100 +146,99 @@ public class SprintPredictionService {
         (moving non-core stories out of the Sprint) or reallocating resources; otherwise, the Sprint goal will not be met.
         * */
 
-        double committedSp = sprint.getCommittedPoints() != null ? sprint.getCommittedPoints().doubleValue() : 0.0;  // 初始承诺的故事点
-        double completedSp = sprint.getCompletedPoints() != null ? sprint.getCompletedPoints().doubleValue() : 0.0;  // 已完成的故事点
-        double remainingSp = Math.max(0, committedSp - completedSp);                                                 // 剩余故事点（确保非负）
+        double committedSp = sprint.getCommittedPoints() != null ? sprint.getCommittedPoints().doubleValue() : 0.0;  // initially committed story points
+        double completedSp = sprint.getCompletedPoints() != null ? sprint.getCompletedPoints().doubleValue() : 0.0;  // completed story points
+        double remainingSp = Math.max(0, committedSp - completedSp);                                                 // remaining story points (clamped to non-negative)
 
-        // 存储容量相关特征
-        features.put("committed_sp", committedSp);                                        // 承诺故事点总数
-        features.put("completed_sp", completedSp);                                        // 已完成故事点数
-        features.put("remaining_sp", remainingSp);                                        // 剩余故事点数
-        features.put("remaining_ratio", committedSp > 0 ? remainingSp / committedSp : 0.0);  // 剩余工作比例
+        // Store capacity-related features.
+        features.put("committed_sp", committedSp);                                        // total committed story points
+        features.put("completed_sp", completedSp);                                        // completed story points
+        features.put("remaining_sp", remainingSp);                                        // remaining story points
+        features.put("remaining_ratio", committedSp > 0 ? remainingSp / committedSp : 0.0);  // remaining work ratio
 
-        // ==================== 第3类：速度特征 ====================
-        // 计算当前 Sprint 的开发速度（故事点/天）
+        // ==================== Group 3: Velocity features ====================
+        // Calculate the current Sprint's development velocity (story points per day).
         double velocityCurrent = elapsedDays > 0 ? completedSp / elapsedDays : 0.0;
 
-        // 从历史数据计算团队的平均速度和速度稳定性
-        double velocityAvg = calculateHistoricalVelocity(sprint.getProjectId());          // 最近5个 Sprint 的平均速度
-        double velocityStd = calculateVelocityStd(sprint.getProjectId());                 // 最近5个 Sprint 的速度标准差
+        // Calculate team average velocity and velocity stability from historical data.
+        double velocityAvg = calculateHistoricalVelocity(sprint.getProjectId());          // average velocity over last 5 Sprints
+        double velocityStd = calculateVelocityStd(sprint.getProjectId());                 // velocity std dev over last 5 Sprints
 
-        // 存储速度相关特征
-        features.put("velocity_current", velocityCurrent);                                // 当前速度（故事点/天）
-        features.put("velocity_avg_5", velocityAvg);                                      // 历史平均速度
-        features.put("velocity_std_5", velocityStd);                                      // 速度标准差（稳定性指标）
-        features.put("velocity_gap", velocityCurrent - velocityAvg);                      // 当前速度与历史平均的差异
+        // Store velocity-related features.
+        features.put("velocity_current", velocityCurrent);                                // current velocity (story points/day)
+        features.put("velocity_avg_5", velocityAvg);                                      // historical average velocity
+        features.put("velocity_std_5", velocityStd);                                      // velocity std dev (stability indicator)
+        features.put("velocity_gap", velocityCurrent - velocityAvg);                      // gap between current and historical average velocity
 
-        // ==================== 第4类：任务特征 ====================
-        // 查询当前 Sprint 下的所有任务，用于分析任务状态和类型分布
+        // ==================== Group 4: Task features ====================
+        // Query all tasks under the current Sprint to analyze task status and type distribution.
         List<Task> sprintTasks = taskRepository.findBySprintId(sprint.getId());
 
-        // 统计阻断状态的任务数量（BLOCKED 状态的 Story）
-        // 阻断任务数量是影响 Sprint 完成的重要风险因子
+        // Count tasks in BLOCKED state — a key risk factor affecting Sprint completion.
         int blockedStories = (int) sprintTasks.stream()
-                .filter(task -> "BLOCKED".equals(task.getStatus()))  // 过滤出状态为 BLOCKED 的任务
-                .count();                                            // 计算数量
+                .filter(task -> "BLOCKED".equals(task.getStatus()))  // filter tasks with BLOCKED status
+                .count();
 
-        // 存储阻断任务特征
-        features.put("blocked_stories", (double) blockedStories);    // 阻断任务数量
+        // Store blocked task feature.
+        features.put("blocked_stories", (double) blockedStories);    // number of blocked tasks
 
-        // 计算任务类型分布比例 - 不同类型任务的完成难度和风险不同
-        long totalTasks = sprintTasks.size();                        // 总任务数
+        // Calculate task type distribution ratios — different task types have different completion difficulty and risk.
+        long totalTasks = sprintTasks.size();                        // total task count
         if (totalTasks > 0) {
-            // 统计新功能类型任务数量
+            // Count new-feature type tasks.
             long featureTasks = sprintTasks.stream()
                     .filter(task -> "FEATURE".equals(task.getType()))
                     .count();
 
-            // 统计缺陷修复类型任务数量
+            // Count bug-fix type tasks.
             long bugTasks = sprintTasks.stream()
                     .filter(task -> "BUG".equals(task.getType()))
                     .count();
 
-            // 统计技术债务类型任务数量
+            // Count technical-debt type tasks.
             long techDebtTasks = sprintTasks.stream()
                     .filter(task -> "TECH_DEBT".equals(task.getType()))
                     .count();
 
-            // 计算各类型任务的比例 [0.0, 1.0]
-            features.put("ratio_feature", featureTasks / (double) totalTasks);      // 新功能任务比例
-            features.put("ratio_bug", bugTasks / (double) totalTasks);              // Bug 修复任务比例
-            features.put("ratio_tech_debt", techDebtTasks / (double) totalTasks);   // 技术债务任务比例
+            // Calculate each task type ratio [0.0, 1.0].
+            features.put("ratio_feature", featureTasks / (double) totalTasks);      // new-feature task ratio
+            features.put("ratio_bug", bugTasks / (double) totalTasks);              // bug-fix task ratio
+            features.put("ratio_tech_debt", techDebtTasks / (double) totalTasks);   // technical-debt task ratio
         } else {
-            // 如果没有任务，所有比例设为 0
+            // If there are no tasks, set all ratios to 0.
             features.put("ratio_feature", 0.0);
             features.put("ratio_bug", 0.0);
             features.put("ratio_tech_debt", 0.0);
         }
 
-        // 团队出勤率特征（当前简化为固定值 0.85）
-        // TODO: 实际应该从工作日志（work_logs 表）中计算真实出勤率
-        // 出勤率影响团队的实际开发能力和 Sprint 完成概率
+        // Team attendance rate feature (currently simplified to a fixed value of 0.85).
+        // TODO: Should be calculated from actual work logs (work_logs table) in a real implementation.
+        // Attendance rate affects the team's effective development capacity and Sprint completion probability.
         features.put("attendance_rate", 0.85);
 
-        // ==================== 第5类：衍生特征 ====================
-        // 基于已有特征计算的高级特征，提供更强的预测能力
+        // ==================== Group 5: Derived features ====================
+        // Advanced features computed from existing features to provide stronger predictive power.
 
-        // 预测最终完成的故事点数 = 当前已完成 + 按当前速度在剩余时间内能完成的
+        // Projected final story points = already completed + what can be completed in remaining days at current velocity.
         double projectedSp = completedSp + velocityCurrent * remainingDays;
 
-        // 存储衍生特征
-        features.put("projected_sp", projectedSp);                                           // 预测最终完成故事点
-        features.put("projected_completion_ratio", committedSp > 0 ? projectedSp / committedSp : 0.0);  // 预测完成比例
+        // Store derived features.
+        features.put("projected_sp", projectedSp);                                           // projected final story points completed
+        features.put("projected_completion_ratio", committedSp > 0 ? projectedSp / committedSp : 0.0);  // projected completion ratio
 
-        // 返回包含19个特征的完整特征向量
+        // Return the complete feature vector containing 19 features.
         return features;
     }
 
     /**
-     * 计算历史平均速度
+     * Calculate the historical average velocity.
      */
     private double calculateHistoricalVelocity(Long projectId) {
         List<Sprint> recentSprints = sprintRepository.findTop5ByProjectIdAndStatusOrderByEndDateDesc(
                 projectId, Sprint.SprintStatus.COMPLETED);
 
         if (recentSprints.isEmpty()) {
-            return 3.0; // 默认速度
+            return 3.0; // default velocity
         }
 
         return recentSprints.stream()
@@ -250,14 +249,14 @@ public class SprintPredictionService {
     }
 
     /**
-     * 计算速度标准差
+     * Calculate the velocity standard deviation.
      */
     private double calculateVelocityStd(Long projectId) {
         List<Sprint> recentSprints = sprintRepository.findTop5ByProjectIdAndStatusOrderByEndDateDesc(
                 projectId, Sprint.SprintStatus.COMPLETED);
 
         if (recentSprints.size() < 2) {
-            return 1.0; // 默认标准差
+            return 1.0; // default std dev
         }
 
         double[] velocities = recentSprints.stream()
@@ -279,76 +278,75 @@ public class SprintPredictionService {
     }
 
     /**
-     * 映射风险等级 - 将数值概率转换为业务可理解的风险等级
+     * Map risk level — convert a numeric probability to a business-readable risk level.
      *
-     * 风险等级划分标准：
-     * - GREEN（绿色/低风险）：完成概率 >= 80%，Sprint 很可能按时完成
-     * - YELLOW（黄色/中风险）：完成概率 50%-80%，存在一定风险，需要关注
-     * - RED（红色/高风险）：完成概率 < 50%，完成风险很高，需要立即采取行动
+     * Risk level criteria:
+     * - GREEN (low risk): completion probability >= 80% — Sprint is very likely to complete on time
+     * - YELLOW (medium risk): completion probability 50%-80% — some risk, requires attention
+     * - RED (high risk): completion probability < 50% — high risk of failure, immediate action needed
      *
-     * @param probability 模型预测的完成概率，范围 [0.0, 1.0]
-     * @return String 风险等级标识：GREEN、YELLOW 或 RED
+     * @param probability model-predicted completion probability in range [0.0, 1.0]
+     * @return String risk level identifier: GREEN, YELLOW, or RED
      */
     private String mapRiskLevel(double probability) {
-        // 高概率完成（>=80%）：绿色等级，团队状态良好
+        // High probability of completion (>=80%): GREEN level, team is in good shape.
         if (probability >= 0.8) {
             return "GREEN";
         }
-        // 中等概率完成（50%-80%）：黄色等级，需要监控和调整
+        // Medium probability of completion (50%-80%): YELLOW level, requires monitoring and adjustment.
         else if (probability >= 0.5) {
             return "YELLOW";
         }
-        // 低概率完成（<50%）：红色等级，需要紧急干预
+        // Low probability of completion (<50%): RED level, urgent intervention needed.
         else {
             return "RED";
         }
     }
 
     /**
-     * 构建特征摘要 - 提取关键特征用于前端展示和业务分析
+     * Build feature summary — extract key features for frontend display and business analysis.
      *
-     * 从完整的19个特征中选择最重要的7个特征构建摘要对象
-     * 这些特征对业务人员最有参考价值，便于理解预测结果的依据
+     * Selects the 7 most important features from the full set of 19 to build the summary object.
+     * These features are most meaningful to business stakeholders and help explain the prediction result.
      *
-     * @param features 完整的特征向量 Map，包含19个特征
-     * @return FeatureSummary 特征摘要对象，包含7个核心指标
+     * @param features the complete feature vector Map containing 19 features
+     * @return FeatureSummary object containing 7 core indicators
      */
     private SprintCompletionPredictionDto.FeatureSummary buildFeatureSummary(Map<String, Double> features) {
         return SprintCompletionPredictionDto.FeatureSummary.builder()
-                // 时间进度比例：已消耗时间占总时间的比例，反映 Sprint 时间进度
-                // 时间进度比例：已消耗时间占总时间的比例，反映 Sprint 时间进度
+                // Time-progress ratio: elapsed time as a proportion of total Sprint time.
                 .daysElapsedRatio(features.get("elapsed_ratio"))
-                // 剩余工作比例：剩余故事点占承诺故事点的比例，反映工作完成进度
+                // Remaining work ratio: remaining story points as a proportion of committed story points.
                 .remainingRatio(features.get("remaining_ratio"))
-                // 当前开发速度：当前 Sprint 的故事点完成速度（故事点/天）
+                // Current velocity: story points completed per day in the current Sprint.
                 .velocityCurrent(features.get("velocity_current"))
-                // 历史平均速度：最近5个 Sprint 的平均开发速度，作为基准参考
+                // Historical average velocity: average delivery rate over the last 5 Sprints, used as a baseline.
                 .velocityAvg(features.get("velocity_avg_5"))
-                // 预测完成比例：按当前速度预测最终能完成的工作量占承诺的比例
+                // Projected completion ratio: estimated final completion ratio at current velocity.
                 .projectedCompletionRatio(features.get("projected_completion_ratio"))
-                // 阻断任务数：当前处于阻断状态的任务数量，影响进度的风险因子
+                // Blocked task count: number of tasks currently blocked, a risk factor for progress.
                 .blockedStories(features.get("blocked_stories").intValue())
-                // 团队出勤率：团队成员的出勤情况，影响实际开发能力
+                // Team attendance rate: attendance of team members, affects actual development capacity.
                 .attendanceRate(features.get("attendance_rate"))
-                .build();  // 构建不可变的特征摘要对象
+                .build();  // Build the immutable feature summary object.
     }
 
     /**
-     * 加载特征列配置 - 从 JSON 文件中读取模型训练时使用的特征列顺序
+     * Load feature column configuration — reads the feature column order used during model training from a JSON file.
      *
-     * 机器学习模型对特征顺序敏感，必须确保推理时的特征顺序与训练时完全一致
-     * 该方法在服务启动时（@PostConstruct）执行，加载特征列配置到内存中
+     * ML models are sensitive to feature order; the order at inference time must exactly match the training order.
+     * This method runs at service startup (@PostConstruct) and loads the feature column config into memory.
      *
-     * 配置文件位置：src/main/resources/models/feature_columns.json
-     * 文件格式：{"feature_columns": ["feature1", "feature2", ...]}
+     * Config file location: src/main/resources/models/feature_columns.json
+     * File format: {"feature_columns": ["feature1", "feature2", ...]}
      *
-     * @throws IOException 当配置文件不存在或格式错误时抛出异常
+     * @throws IOException when the config file is missing or malformed
      */
     private void loadFeatureColumns() throws IOException {
-        // 从 classpath 加载特征列配置文件
+        // Load feature column config file from the classpath.
         ClassPathResource resource = new ClassPathResource("models/feature_columns.json");
 
-        // 使用 try-with-resources 确保输入流正确关闭
+        // Use try-with-resources to ensure the input stream is properly closed.
         try (InputStream inputStream = resource.getInputStream()) {
             JsonNode jsonNode = objectMapper.readTree(inputStream);
             featureColumns = objectMapper.convertValue(

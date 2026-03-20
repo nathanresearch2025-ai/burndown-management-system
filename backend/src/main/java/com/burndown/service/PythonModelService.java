@@ -15,8 +15,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Python 模型调用服务
- * 通过 ProcessBuilder 调用 Python 脚本进行模型推理
+ * Python model invocation service.
+ * Calls Python scripts via ProcessBuilder for model inference.
  */
 @Slf4j
 @Service
@@ -29,68 +29,68 @@ public class PythonModelService {
     private Path featureColumnsPath;
     private Path tempDir;
 
-    //@PostConstruct 是 Java EE（现在是 Jakarta EE）提供的注解，在 Spring Boot 环境下，
-    //它的核心作用就是确保在该 Bean 的依赖注入（Dependency Injection）完成后，立即执行初始化逻辑。
+    // @PostConstruct is a Jakarta EE annotation. In Spring Boot, its core role is to ensure
+    // that initialization logic runs immediately after dependency injection is complete for this bean.
     @PostConstruct
     public void init() {
         try {
-            // 创建临时目录
+            // Create a temporary directory.
             tempDir = Files.createTempDirectory("sprint_model");
 
-            // 复制模型文件到临时目录
+            // Copy model files to the temporary directory.
             copyResourceToTemp("models/random_forest_model.pkl", "random_forest_model.pkl");
 
             /*
-                基础时间与规模特征
-                    • sprint_days: Sprint 的总持续天数（通常为 10 或 14 天）。
-                    • days_elapsed: 当前 Sprint 已过去的天数。
-                    • committed_sp: Sprint 计划时承诺的总故事点数（初始范围）。
-                    • remaining_sp: 当前尚未完成（未达到 DoD）的故事点数。
-                    • completed_sp: 当前已经完成并关闭的故事点数。
-                2. 团队速率（Velocity）特征
-                    • velocity_current: 当前 Sprint 的实时平均速率（已完成点数 / 已过去天数）。
-                    • velocity_avg_5: 团队过去 5 个 Sprint 的平均交付速率（用于衡量团队长期稳定性）。
-                    • velocity_std_5: 过去 5 个 Sprint 速率的标准差（用于衡量团队表现的波动性/可预测性）。
-                3. 风险与团队状态特征
-                    • blocked_stories: 当前处于“被阻碍（Blocked）”状态的故事数量或点数。
-                    • attendance_rate: 团队成员的到岗率/出勤率（反映人力资源是否充足）。
-                    • ratio_feature: 新功能开发在当前 Sprint 中的占比。
-                    • ratio_bug: 缺陷修复（Bug）在当前 Sprint 中的占比。
-                    • ratio_tech_debt: 技术债处理在当前 Sprint 中的占比。
-                4. 派生/计算特征（用于模型增强）
-                    • days_remaining: 剩余工作天数（sprint_days - days_elapsed）。
-                    • elapsed_ratio: 时间进度占比（已过去天数 / 总天数）。
-                    • remaining_ratio: 剩余工作量占比（剩余点数 / 承诺总点数）。
-                    • velocity_gap: 速率差距（理想每日速率与当前实际速率的差值）。
-                    • projected_sp: 基于当前速率预测的 Sprint 结束时能完成的总点数。
-                projected_completion_ratio: 预测完成率（projected_sp / committed_sp）。
+                1. Basic time and scale features
+                    • sprint_days: Total duration of the Sprint in days (typically 10 or 14).
+                    • days_elapsed: Number of days elapsed in the current Sprint.
+                    • committed_sp: Total story points committed at Sprint planning (initial scope).
+                    • remaining_sp: Story points not yet completed (Definition of Done not met).
+                    • completed_sp: Story points that have been completed and closed.
+                2. Team velocity features
+                    • velocity_current: Real-time average velocity of the current Sprint (completed points / elapsed days).
+                    • velocity_avg_5: Average delivery velocity over the last 5 Sprints (measures long-term team stability).
+                    • velocity_std_5: Standard deviation of velocity over the last 5 Sprints (measures performance variability/predictability).
+                3. Risk and team status features
+                    • blocked_stories: Number or points of stories currently in Blocked state.
+                    • attendance_rate: Team member attendance rate (reflects whether human resources are sufficient).
+                    • ratio_feature: Proportion of new-feature development in the current Sprint.
+                    • ratio_bug: Proportion of bug-fix work in the current Sprint.
+                    • ratio_tech_debt: Proportion of technical debt work in the current Sprint.
+                4. Derived/computed features (for model enhancement)
+                    • days_remaining: Remaining working days (sprint_days - days_elapsed).
+                    • elapsed_ratio: Time progress ratio (elapsed days / total days).
+                    • remaining_ratio: Remaining workload ratio (remaining points / committed points).
+                    • velocity_gap: Velocity gap (difference between ideal daily velocity and current actual velocity).
+                    • projected_sp: Total points predicted to be completed by end of Sprint at current velocity.
+                    • projected_completion_ratio: Predicted completion rate (projected_sp / committed_sp).
             * */
             copyResourceToTemp("models/feature_columns.json", "feature_columns.json");
 
             modelPath = tempDir.resolve("random_forest_model.pkl");
             featureColumnsPath = tempDir.resolve("feature_columns.json");
 
-            // 创建推理脚本
+            // Create the inference script.
             createInferenceScript();
 
-            log.info("Python 模型服务初始化完成，模型路径: {}", modelPath);
+            log.info("Python model service initialized successfully, model path: {}", modelPath);
         } catch (Exception e) {
-            log.error("Python 模型服务初始化失败", e);
+            log.error("Python model service initialization failed", e);
         }
     }
 
     /**
-     * 预测 Sprint 完成概率
+     * Predict the Sprint completion probability.
      */
     public double predictSprintCompletion(Map<String, Double> features, List<String> featureColumns) {
         try {
-            // 构建特征向量字符串
-            // 在 Java 代码中，当你准备调用 Python 推理脚本时，你需要确保传入的特征数组（Feature Array）的顺序与这个 JSON 文件中定义的顺序完全一致。
+            // Build the feature vector string.
+            // The feature array order must exactly match the order defined in feature_columns.json.
             String featureVector = featureColumns.stream()
                     .map(col -> String.valueOf(features.getOrDefault(col, 0.0)))
                     .collect(Collectors.joining(","));
 
-            // 调用 Python 脚本
+            // Invoke the Python script.
             ProcessBuilder pb = new ProcessBuilder(
                     pythonExecutable,
                     tempDir.resolve("inference.py").toString(),
@@ -101,7 +101,7 @@ public class PythonModelService {
 
             Process process = pb.start();
 
-            // 读取输出
+            // Read the process output.
             StringBuilder output = new StringBuilder();
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
                 String line;
@@ -112,11 +112,11 @@ public class PythonModelService {
 
             int exitCode = process.waitFor();
             if (exitCode != 0) {
-                log.error("Python 脚本执行失败，退出码: {}, 输出: {}", exitCode, output.toString());
-                return 0.5; // 默认概率
+                log.error("Python script execution failed, exit code: {}, output: {}", exitCode, output.toString());
+                return 0.5; // default probability
             }
 
-            // 解析概率结果
+            // Parse the probability result.
             String result = output.toString().trim();
             String[] lines = result.split("\n");
             for (String line : lines) {
@@ -125,17 +125,17 @@ public class PythonModelService {
                 }
             }
 
-            log.warn("无法解析 Python 脚本输出: {}", result);
+            log.warn("Unable to parse Python script output: {}", result);
             return 0.5;
 
         } catch (Exception e) {
-            log.error("调用 Python 模型失败", e);
-            return 0.5; // 降级返回默认概率
+            log.error("Failed to invoke Python model", e);
+            return 0.5; // fallback default probability
         }
     }
 
     /**
-     * 复制资源文件到临时目录
+     * Copy a resource file to the temporary directory.
      */
     private void copyResourceToTemp(String resourcePath, String fileName) throws IOException {
         ClassPathResource resource = new ClassPathResource(resourcePath);
@@ -146,7 +146,7 @@ public class PythonModelService {
     }
 
     /**
-     * 创建 Python 推理脚本
+     * Create the Python inference script.
      */
     private void createInferenceScript() throws IOException {
         String script = """
@@ -159,28 +159,28 @@ warnings.filterwarnings('ignore')
 
 def main():
     if len(sys.argv) != 2:
-        print("ERROR: 需要特征向量参数")
+        print("ERROR: Feature vector argument required")
         sys.exit(1)
 
     try:
-        # 加载模型
+        # Load the model.
         model = joblib.load('random_forest_model.pkl')
 
-        # 加载特征列
+        # Load feature columns.
         with open('feature_columns.json', 'r', encoding='utf-8') as f:
             config = json.load(f)
             feature_columns = config['feature_columns']
 
-        # 解析特征向量
+        # Parse the feature vector.
         feature_values = [float(x) for x in sys.argv[1].split(',')]
 
         if len(feature_values) != len(feature_columns):
-            print(f"ERROR: 特征数量不匹配，期望 {len(feature_columns)}，实际 {len(feature_values)}")
+            print(f"ERROR: Feature count mismatch, expected {len(feature_columns)}, got {len(feature_values)}")
             sys.exit(1)
 
-        # 预测
+        # Run prediction.
         X = np.array([feature_values])
-        probability = model.predict_proba(X)[0][1]  # 获取正类概率
+        probability = model.predict_proba(X)[0][1]  # get positive class probability
 
         print(f"PROBABILITY:{probability:.6f}")
 

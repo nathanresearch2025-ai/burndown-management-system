@@ -23,11 +23,11 @@ public class CacheConfig {
 
     @Bean
     public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
-        // 配置ObjectMapper以支持Java 8日期时间类型
+        // Configure ObjectMapper to support Java 8 date/time types.
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
         objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-        // 启用类型信息以正确反序列化
+        // Enable type information for correct deserialization.
         objectMapper.activateDefaultTyping(
             objectMapper.getPolymorphicTypeValidator(),
             ObjectMapper.DefaultTyping.NON_FINAL
@@ -36,7 +36,7 @@ public class CacheConfig {
         GenericJackson2JsonRedisSerializer serializer = new GenericJackson2JsonRedisSerializer(objectMapper);
 
         RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
-            .entryTtl(Duration.ofMinutes(10))  // 默认10分钟过期
+            .entryTtl(Duration.ofMinutes(10))  // default TTL: 10 minutes
             .serializeKeysWith(RedisSerializationContext.SerializationPair
                 .fromSerializer(new StringRedisSerializer()))
             .serializeValuesWith(RedisSerializationContext.SerializationPair
@@ -45,19 +45,19 @@ public class CacheConfig {
 
         Map<String, RedisCacheConfiguration> cacheConfigurations = new HashMap<>();
 
-        // 权限缓存 - 30分钟
+        // Permissions cache — 30 minutes.
         cacheConfigurations.put("permissions", config.entryTtl(Duration.ofMinutes(30)));
 
-        // 角色缓存 - 30分钟
+        // Roles cache — 30 minutes.
         cacheConfigurations.put("roles", config.entryTtl(Duration.ofMinutes(30)));
 
-        // 项目列表缓存 - 5分钟
+        // Project list cache — 5 minutes.
         cacheConfigurations.put("projects", config.entryTtl(Duration.ofMinutes(5)));
 
-        // 用户信息缓存 - 15分钟
+        // User info cache — 15 minutes.
         cacheConfigurations.put("users", config.entryTtl(Duration.ofMinutes(15)));
 
-        // AI 任务描述生成缓存 - 24小时
+        // AI task description generation cache — 24 hours.
         cacheConfigurations.put("aiTaskGeneration", config.entryTtl(Duration.ofHours(24)));
 
         return RedisCacheManager.builder(connectionFactory)

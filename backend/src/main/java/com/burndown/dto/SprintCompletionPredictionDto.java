@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 import java.util.Map;
 
 /**
- * Sprint 完成预测结果 DTO
+ * DTO for Sprint completion prediction results.
  */
 @Data
 @Builder
@@ -18,31 +18,31 @@ import java.util.Map;
 public class SprintCompletionPredictionDto {
 
     /**
-     * 完成概率 (0.0 - 1.0)
+     * Completion probability (0.0 – 1.0).
      */
     @JsonProperty("probability")
     private Double probability;
 
     /**
-     * 风险等级: GREEN, YELLOW, RED
+     * Risk level: GREEN, YELLOW, or RED.
      */
     @JsonProperty("riskLevel")
     private String riskLevel;
 
     /**
-     * 特征摘要
+     * Summary of input features used for the prediction.
      */
     @JsonProperty("featureSummary")
     private FeatureSummary featureSummary;
 
     /**
-     * 预测时间戳
+     * Unix timestamp (ms) of when the prediction was generated.
      */
     @JsonProperty("predictedAt")
     private Long predictedAt;
 
     /**
-     * 特征摘要内部类
+     * Inner class holding the feature summary.
      */
     @Data
     @Builder

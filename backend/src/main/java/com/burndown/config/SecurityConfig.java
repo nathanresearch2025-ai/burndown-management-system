@@ -54,14 +54,14 @@ public class SecurityConfig {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        // 使用强度4进行压力测试（生产环境建议使用6-8）
+        // Using strength 4 for load testing (6-8 is recommended for production).
         return new BCryptPasswordEncoder(4);
     }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // 允许所有来源（开发环境）
+        // Allow all origins (development environment).
         configuration.setAllowedOriginPatterns(Arrays.asList("*"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));

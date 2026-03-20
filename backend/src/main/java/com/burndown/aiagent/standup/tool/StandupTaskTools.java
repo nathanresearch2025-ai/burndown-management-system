@@ -12,21 +12,20 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 
 /**
- * Standup Agent 任务工具类
+ * Standup Agent task tools.
  *
- * 功能说明：
- * 提供给 AI Agent 调用的工具函数，用于查询任务相关数据
+ * Provides tool functions callable by the AI Agent to query task-related data.
  *
- * 工作原理（Spring AI Function Calling）：
- * 1. 使用 @Component 注解，让 Spring 管理这个工具类
- * 2. 方法上使用 @Description 注解，描述工具的功能（AI 会根据这个描述决定是否调用）
- * 3. 参数使用 record 类型，配合 @JsonProperty 和 @JsonPropertyDescription 注解
- * 4. AI 在对话过程中，如果需要任务数据，会自动调用这些工具函数
- * 5. 工具函数返回字符串格式的结果，AI 会将结果整合到最终回答中
+ * How it works (Spring AI Function Calling):
+ * 1. @Component makes this tool class managed by Spring.
+ * 2. @Description on methods describes the tool's capability (the AI uses this to decide whether to call it).
+ * 3. Parameters use record types together with @JsonProperty and @JsonPropertyDescription annotations.
+ * 4. During a conversation, if the AI needs task data, it automatically calls these tool functions.
+ * 5. Tool functions return string-formatted results; the AI integrates the results into its final answer.
  *
- * 示例场景：
- * 用户问："我今天有哪些任务在进行中？"
- * AI 识别需要任务数据 -> 调用 getInProgressTasks() -> 获取任务列表 -> 生成自然语言回答
+ * Example scenario:
+ * User asks: "Which tasks am I currently working on today?"
+ * AI detects it needs task data -> calls getInProgressTasks() -> retrieves task list -> generates natural-language answer.
  */
 @Slf4j
 @Component
@@ -36,74 +35,73 @@ public class StandupTaskTools {
     private final TaskRepository taskRepository;
 
     /**
-     * 获取用户当前进行中的任务列表
+     * Get the list of tasks currently in progress for a user.
      *
-     * 功能：
-     * - 查询指定项目中，指定用户的所有"进行中"状态的任务
-     * - 返回任务的关键信息：任务编号、标题、优先级、故事点、更新时间
+     * - Queries all tasks with IN_PROGRESS status for a given user in a given project.
+     * - Returns key task info: task key, title, priority, story points, and last updated time.
      *
-     * AI 调用时机：
-     * - 用户询问"我有哪些任务在做"
-     * - 用户询问"今天的工作进展"
-     * - 用户询问"我负责的任务"
+     * AI invocation triggers:
+     * - User asks "what tasks am I working on"
+     * - User asks "what is my progress today"
+     * - User asks "which tasks am I responsible for"
      *
-     * @param request 包含项目ID和用户ID的请求参数
-     * @return 格式化的任务列表字符串，供 AI 理解和生成回答
+     * @param request request containing project ID and user ID
+     * @return formatted task list string for the AI to understand and generate an answer
      */
-    @Description("获取用户当前进行中的任务列表")
+    @Description("Get the list of tasks currently in progress for a user")
     public String getInProgressTasks(GetInProgressTasksRequest request) {
         log.info("Tool called: getInProgressTasks - projectId: {}, userId: {}",
                 request.projectId(), request.userId());
 
         try {
-            // 查询任务：项目匹配 + 用户匹配 + 状态为"进行中"
+            // Query tasks: matching project + matching user + status = IN_PROGRESS.
             List<Task> tasks = taskRepository.findByProjectIdAndAssigneeIdAndStatus(
                     request.projectId(),
                     request.userId(),
                     Task.TaskStatus.IN_PROGRESS
             );
 
-            // 如果没有任务，返回友好提示
+            // If no tasks found, return a friendly message.
             if (tasks.isEmpty()) {
-                return "当前没有进行中的任务";
+                return "No tasks currently in progress.";
             }
 
-            // 构建格式化的任务列表字符串
+            // Build the formatted task list string.
             StringBuilder result = new StringBuilder();
-            result.append(String.format("找到 %d 个进行中的任务：\n", tasks.size()));
+            result.append(String.format("Found %d task(s) in progress:\n", tasks.size()));
 
             for (Task task : tasks) {
-                result.append(String.format("- %s: %s (优先级: %s, 故事点: %s, 更新时间: %s)\n",
-                        task.getTaskKey(),      // 任务编号，如 TASK-123
-                        task.getTitle(),        // 任务标题
-                        task.getPriority(),     // 优先级：HIGH/MEDIUM/LOW
-                        task.getStoryPoints(),  // 故事点数
-                        task.getUpdatedAt()));  // 最后更新时间
+                result.append(String.format("- %s: %s (priority: %s, story points: %s, updated: %s)\n",
+                        task.getTaskKey(),      // task key, e.g. TASK-123
+                        task.getTitle(),        // task title
+                        task.getPriority(),     // priority: HIGH/MEDIUM/LOW
+                        task.getStoryPoints(),  // story points
+                        task.getUpdatedAt()));  // last updated time
             }
 
             return result.toString();
 
         } catch (Exception e) {
             log.error("Error getting in-progress tasks: {}", e.getMessage(), e);
-            return "获取任务失败: " + e.getMessage();
+            return "Failed to retrieve tasks: " + e.getMessage();
         }
     }
 
     /**
-     * 工具函数的请求参数定义
+     * Request parameter definition for the tool function.
      *
-     * 使用 Java Record 类型（不可变数据类）
-     * @JsonProperty 和 @JsonPropertyDescription 注解用于：
-     * - 告诉 AI 这个参数的含义
-     * - 让 AI 知道如何构造调用参数
+     * Uses a Java Record type (immutable data class).
+     * @JsonProperty and @JsonPropertyDescription annotations are used to:
+     * - Tell the AI what each parameter means.
+     * - Let the AI know how to construct the call arguments.
      */
     public record GetInProgressTasksRequest(
             @JsonProperty(required = true)
-            @JsonPropertyDescription("项目 ID")
+            @JsonPropertyDescription("Project ID")
             Long projectId,
 
             @JsonProperty(required = true)
-            @JsonPropertyDescription("用户 ID")
+            @JsonPropertyDescription("User ID")
             Long userId
     ) {}
 }

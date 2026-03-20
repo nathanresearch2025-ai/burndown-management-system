@@ -6,6 +6,6 @@ import java.util.Set;
 
 @Data
 public class AssignRolesRequest {
-    @NotEmpty(message = "角色ID列表不能为空")
+    @NotEmpty(message = "Role ID list must not be empty")
     private Set<Long> roleIds;
 }

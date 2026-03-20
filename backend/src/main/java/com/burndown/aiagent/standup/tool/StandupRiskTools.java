@@ -10,73 +10,71 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 
 /**
- * Standup Agent 风险评估工具类
+ * Standup Agent risk assessment tool.
  *
- * 功能说明：
- * 提供给 AI Agent 调用的燃尽图风险评估工具
+ * Provides a burndown risk assessment tool callable by the AI Agent.
  *
- * 核心功能：
- * 1. 计算实际剩余工时与计划剩余工时的偏差比例
- * 2. 根据偏差比例评估风险等级（LOW/MEDIUM/HIGH）
- * 3. 提供针对性的改进建议
+ * Core functionality:
+ * 1. Calculate the deviation ratio between actual and planned remaining hours.
+ * 2. Assess the risk level (LOW/MEDIUM/HIGH) based on the deviation ratio.
+ * 3. Provide targeted improvement recommendations.
  *
- * 风险等级判定标准：
- * - LOW（低风险）：偏差比例 ≤ 5%
- *   - 进度良好，按计划推进
- *   - 建议：继续保持当前节奏
+ * Risk level criteria:
+ * - LOW (low risk): deviation ratio <= 5%
+ *   - Progress is on track.
+ *   - Recommendation: maintain the current pace.
  *
- * - MEDIUM（中等风险）：5% < 偏差比例 ≤ 20%
- *   - 存在一定延期风险
- *   - 建议：优先推进高优任务，减少并行工作
+ * - MEDIUM (medium risk): 5% < deviation ratio <= 20%
+ *   - Some delay risk exists.
+ *   - Recommendation: prioritize high-priority tasks and reduce parallel work.
  *
- * - HIGH（高风险）：偏差比例 > 20%
- *   - 存在严重延期风险
- *   - 建议：立即召开团队会议，重新评估任务优先级和资源分配
+ * - HIGH (high risk): deviation ratio > 20%
+ *   - Serious delay risk exists.
+ *   - Recommendation: hold a team meeting immediately and re-evaluate task priorities and resource allocation.
  *
- * 使用场景：
- * - 用户询问："有延期风险吗？"
- * - 用户询问："我们能按时完成吗？"
- * - 用户询问："当前有什么风险？"
+ * Usage scenarios:
+ * - User asks: "Is there a risk of delay?"
+ * - User asks: "Can we finish on time?"
+ * - User asks: "What risks do we currently have?"
  *
- * 工作原理：
- * AI 在获取燃尽图数据后，会自动调用此工具进行风险评估
- * 工具返回风险等级和建议，AI 将其整合到自然语言回答中
+ * How it works:
+ * After obtaining burndown data, the AI automatically calls this tool for risk assessment.
+ * The tool returns the risk level and recommendations; the AI integrates these into its natural-language answer.
  */
 @Slf4j
 @Component
 public class StandupRiskTools {
 
     /**
-     * 评估燃尽图偏离风险
+     * Assess the burndown deviation risk.
      *
-     * 功能：
-     * - 计算实际剩余工时与计划剩余工时的偏差
-     * - 计算偏差比例（偏差 / 计划剩余）
-     * - 根据偏差比例判定风险等级
-     * - 提供针对性的改进建议
+     * - Calculates the deviation between actual and planned remaining hours.
+     * - Calculates the deviation ratio (deviation / planned remaining).
+     * - Determines the risk level based on the deviation ratio.
+     * - Provides targeted improvement recommendations.
      *
-     * 计算公式：
-     * - 偏差 = 实际剩余工时 - 计划剩余工时
-     * - 偏差比例 = 偏差 / 计划剩余工时
+     * Formulas:
+     * - deviation = actual remaining hours - planned remaining hours
+     * - deviation ratio = deviation / planned remaining hours
      *
-     * 风险判定逻辑：
-     * - 偏差比例 ≤ 5%：LOW（低风险）
-     * - 5% < 偏差比例 ≤ 20%：MEDIUM（中等风险）
-     * - 偏差比例 > 20%：HIGH（高风险）
+     * Risk determination logic:
+     * - deviation ratio <= 5%: LOW
+     * - 5% < deviation ratio <= 20%: MEDIUM
+     * - deviation ratio > 20%: HIGH
      *
-     * AI 调用时机：
-     * - 用户询问风险评估
-     * - 用户询问是否能按时完成
-     * - AI 在分析燃尽图后自动调用
+     * AI invocation triggers:
+     * - User asks for risk assessment.
+     * - User asks whether the Sprint can be completed on time.
+     * - AI automatically calls this after analyzing burndown data.
      *
-     * @param request 包含计划剩余工时和实际剩余工时的请求参数
-     * @return 格式化的风险评估结果字符串，包含：
-     *         - 风险等级（LOW/MEDIUM/HIGH）
-     *         - 偏差比例（百分比）
-     *         - 偏差工时（小时）
-     *         - 改进建议
+     * @param request request containing planned and actual remaining hours
+     * @return formatted risk assessment string containing:
+     *         - risk level (LOW/MEDIUM/HIGH)
+     *         - deviation ratio (percentage)
+     *         - deviation in hours
+     *         - improvement recommendation
      */
-    @Description("评估燃尽图偏离风险，返回风险等级和建议")
+    @Description("Assess burndown deviation risk and return risk level with recommendations")
     public String evaluateBurndownRisk(EvaluateBurndownRiskRequest request) {
         log.info("Tool called: evaluateBurndownRisk - planned: {}, actual: {}",
                 request.plannedRemaining(), request.actualRemaining());
@@ -85,65 +83,65 @@ public class StandupRiskTools {
             BigDecimal planned = request.plannedRemaining();
             BigDecimal actual = request.actualRemaining();
 
-            // 步骤1：检查计划剩余工时是否为 0
+            // Step 1: Check if planned remaining hours is 0.
             if (planned.compareTo(BigDecimal.ZERO) == 0) {
-                return "计划剩余工时为 0，无法评估风险";
+                return "Planned remaining hours is 0, unable to assess risk";
             }
 
-            // 步骤2：计算偏差和偏差比例
-            // 偏差 = 实际剩余 - 计划剩余
+            // Step 2: Calculate deviation and deviation ratio.
+            // deviation = actual remaining - planned remaining
             BigDecimal deviation = actual.subtract(planned);
-            // 偏差比例 = 偏差 / 计划剩余（保留4位小数）
+            // deviation ratio = deviation / planned remaining (4 decimal places)
             BigDecimal ratio = deviation.divide(planned, 4, RoundingMode.HALF_UP);
 
-            // 步骤3：根据偏差比例判定风险等级和建议
+            // Step 3: Determine risk level and recommendation based on deviation ratio.
             String riskLevel;
             String suggestion;
 
             if (ratio.compareTo(new BigDecimal("0.05")) <= 0) {
-                // 偏差比例 ≤ 5%：低风险
+                // deviation ratio <= 5%: low risk
                 riskLevel = "LOW";
-                suggestion = "进度良好，继续保持当前节奏";
+                suggestion = "Progress is on track, maintain the current pace";
             } else if (ratio.compareTo(new BigDecimal("0.20")) <= 0) {
-                // 5% < 偏差比例 ≤ 20%：中等风险
+                // 5% < deviation ratio <= 20%: medium risk
                 riskLevel = "MEDIUM";
-                suggestion = "存在中等延期风险，建议优先推进高优任务并减少并行工作";
+                suggestion = "Medium delay risk detected; prioritize high-priority tasks and reduce parallel work";
             } else {
-                // 偏差比例 > 20%：高风险
+                // deviation ratio > 20%: high risk
                 riskLevel = "HIGH";
-                suggestion = "存在高延期风险，建议立即召开团队会议，重新评估任务优先级和资源分配";
+                suggestion = "High delay risk detected; hold a team meeting immediately and re-evaluate task priorities and resource allocation";
             }
 
-            // 步骤4：构建格式化的返回结果
+            // Step 4: Build the formatted return value.
             StringBuilder result = new StringBuilder();
-            result.append(String.format("风险等级: %s\n", riskLevel));
-            result.append(String.format("偏差比例: %.1f%%\n", ratio.multiply(new BigDecimal("100"))));
-            result.append(String.format("偏差工时: %.1f 小时\n", deviation));
-            result.append(String.format("建议: %s\n", suggestion));
+            result.append(String.format("Risk level: %s\n", riskLevel));
+            result.append(String.format("Deviation ratio: %.1f%%\n", ratio.multiply(new BigDecimal("100"))));
+            result.append(String.format("Deviation hours: %.1f hours\n", deviation));
+            result.append(String.format("Recommendation: %s\n", suggestion));
 
             return result.toString();
 
         } catch (Exception e) {
             log.error("Error evaluating burndown risk: {}", e.getMessage(), e);
-            return "风险评估失败: " + e.getMessage();
+            return "Risk assessment failed: " + e.getMessage();
         }
     }
 
     /**
-     * 工具函数的请求参数定义
+     * Request parameter definition for the tool function.
      *
-     * 使用 Java Record 类型（不可变数据类）
-     * @JsonProperty 和 @JsonPropertyDescription 注解用于：
-     * - 告诉 AI 这个参数的含义
-     * - 让 AI 知道如何构造调用参数
+     * Uses a Java Record type (immutable data class).
+     * @JsonProperty and @JsonPropertyDescription annotations are used to:
+     * - Tell the AI what each parameter means.
+     * - Let the AI know how to construct the call arguments.
      */
     public record EvaluateBurndownRiskRequest(
             @JsonProperty(required = true)
-            @JsonPropertyDescription("计划剩余工时")
+            @JsonPropertyDescription("Planned remaining hours")
             BigDecimal plannedRemaining,
 
             @JsonProperty(required = true)
-            @JsonPropertyDescription("实际剩余工时")
+            @JsonPropertyDescription("Actual remaining hours")
             BigDecimal actualRemaining
     ) {}
 }

@@ -20,7 +20,7 @@ import java.util.*;
 @ConditionalOnProperty(prefix = "ai.embedding", name = "provider", havingValue = "simple")
 public class SimpleEmbeddingService {
 
-    private static final int VECTOR_DIMENSION = 384; // 与 DJL 模型维度一致
+    private static final int VECTOR_DIMENSION = 384; // matches the DJL model dimension
     private static final int HASH_BUCKETS = 100;
 
     /**
@@ -36,16 +36,16 @@ public class SimpleEmbeddingService {
         try {
             log.debug("Generating simple embedding for text: {}", text.substring(0, Math.min(50, text.length())));
 
-            // 1. 分词
+            // 1. Tokenize.
             List<String> tokens = tokenize(text);
 
-            // 2. 计算词频
+            // 2. Compute term frequency.
             Map<String, Integer> termFrequency = calculateTermFrequency(tokens);
 
-            // 3. 生成向量
+            // 3. Generate vector.
             float[] embedding = generateVector(termFrequency, text);
 
-            // 4. 归一化
+            // 4. Normalize.
             normalize(embedding);
 
             log.debug("Generated simple embedding with dimension: {}", embedding.length);
@@ -95,29 +95,29 @@ public class SimpleEmbeddingService {
     }
 
     /**
-     * 分词 - 支持中英文
+     * Tokenize text — supports both Chinese and English.
      */
     private List<String> tokenize(String text) {
         List<String> tokens = new ArrayList<>();
 
-        // 转小写
+        // Convert to lower-case.
         text = text.toLowerCase();
 
-        // 分割英文单词和中文字符
+        // Split into English words and individual Chinese characters.
         StringBuilder currentToken = new StringBuilder();
 
         for (char c : text.toCharArray()) {
             if (Character.isLetterOrDigit(c)) {
                 currentToken.append(c);
             } else if (isChinese(c)) {
-                // 中文字符单独作为一个 token
+                // Each Chinese character is its own token.
                 if (currentToken.length() > 0) {
                     tokens.add(currentToken.toString());
                     currentToken = new StringBuilder();
                 }
                 tokens.add(String.valueOf(c));
             } else {
-                // 分隔符
+                // Delimiter character — flush the current token buffer.
                 if (currentToken.length() > 0) {
                     tokens.add(currentToken.toString());
                     currentToken = new StringBuilder();
@@ -133,19 +133,19 @@ public class SimpleEmbeddingService {
     }
 
     /**
-     * 判断是否为中文字符
+     * Returns true if the character is in the CJK Unified Ideographs block.
      */
     private boolean isChinese(char c) {
         return c >= 0x4E00 && c <= 0x9FA5;
     }
 
     /**
-     * 计算词频
+     * Calculate term frequency for the token list.
      */
     private Map<String, Integer> calculateTermFrequency(List<String> tokens) {
         Map<String, Integer> tf = new HashMap<>();
         for (String token : tokens) {
-            if (token.length() >= 2) { // 过滤太短的词
+            if (token.length() >= 2) { // skip tokens that are too short
                 tf.put(token, tf.getOrDefault(token, 0) + 1);
             }
         }
@@ -153,27 +153,27 @@ public class SimpleEmbeddingService {
     }
 
     /**
-     * 生成向量
+     * Generate the raw float vector from term frequencies.
      */
     private float[] generateVector(Map<String, Integer> termFrequency, String originalText) {
         float[] vector = new float[VECTOR_DIMENSION];
 
-        // 使用哈希函数将词映射到向量维度
+        // Map each term to vector dimensions using hash functions.
         for (Map.Entry<String, Integer> entry : termFrequency.entrySet()) {
             String term = entry.getKey();
             int frequency = entry.getValue();
 
-            // 使用多个哈希函数增加分布均匀性
+            // Use multiple hash functions to improve distribution uniformity.
             int[] indices = hashTerm(term);
 
             for (int index : indices) {
-                // TF-IDF 权重（简化版）
+                // Simplified TF-IDF weight.
                 float weight = (float) (Math.log(1 + frequency) * 1.5);
                 vector[index] += weight;
             }
         }
 
-        // 添加文本长度特征
+        // Add a text-length feature to the first dimension.
         float lengthFeature = (float) Math.log(1 + originalText.length()) / 10;
         vector[0] += lengthFeature;
 
@@ -181,16 +181,16 @@ public class SimpleEmbeddingService {
     }
 
     /**
-     * 使用多个哈希函数映射词到向量索引
+     * Map a term to vector indices using multiple hash functions.
      */
     private int[] hashTerm(String term) {
-        int[] indices = new int[3]; // 使用3个哈希函数
+        int[] indices = new int[3]; // use 3 hash functions
 
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");
             byte[] hash = md.digest(term.getBytes(StandardCharsets.UTF_8));
 
-            // 从哈希值中提取3个索引
+            // Extract 3 indices from the hash bytes.
             for (int i = 0; i < 3; i++) {
                 int value = Math.abs(hash[i * 4] << 24 |
                                     (hash[i * 4 + 1] & 0xFF) << 16 |
@@ -199,7 +199,7 @@ public class SimpleEmbeddingService {
                 indices[i] = value % VECTOR_DIMENSION;
             }
         } catch (Exception e) {
-            // 降级到简单哈希
+            // Fall back to simple hashing.
             indices[0] = Math.abs(term.hashCode()) % VECTOR_DIMENSION;
             indices[1] = Math.abs((term + "salt1").hashCode()) % VECTOR_DIMENSION;
             indices[2] = Math.abs((term + "salt2").hashCode()) % VECTOR_DIMENSION;
@@ -209,7 +209,7 @@ public class SimpleEmbeddingService {
     }
 
     /**
-     * L2 归一化
+     * L2 normalization.
      */
     private void normalize(float[] vector) {
         double sum = 0;

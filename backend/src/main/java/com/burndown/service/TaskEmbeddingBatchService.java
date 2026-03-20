@@ -12,7 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 /**
- * 批量为现有任务生成向量嵌入
+ * Batch-generates vector embeddings for existing tasks that do not yet have one.
  */
 @Slf4j
 @Service
@@ -28,9 +28,9 @@ public class TaskEmbeddingBatchService {
     }
 
     /**
-     * 为所有没有向量的任务生成向量
-     * @param batchSize 每批处理的任务数量
-     * @return 处理的任务数量
+     * Generate embeddings for all tasks that do not yet have a vector.
+     * @param batchSize number of tasks to process per batch
+     * @return total number of tasks processed
      */
     @Transactional
     public int generateEmbeddingsForTasksWithoutVectors(int batchSize) {
@@ -63,7 +63,7 @@ public class TaskEmbeddingBatchService {
     }
 
     /**
-     * 为单个任务生成并保存向量
+     * Generate and persist the embedding vector for a single task.
      */
     @Transactional
     public void generateAndSaveEmbedding(Task task) {
@@ -82,7 +82,7 @@ public class TaskEmbeddingBatchService {
     }
 
     /**
-     * 重新生成所有任务的向量（慎用）
+     * Regenerate embeddings for all tasks (use with caution).
      */
     @Transactional
     public int regenerateAllEmbeddings(int batchSize) {

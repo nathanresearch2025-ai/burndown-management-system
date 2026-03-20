@@ -86,7 +86,7 @@ public class TaskAiService {
             Project project = projectRepository.findById(request.getProjectId())
                     .orElseThrow(() -> new BusinessException("PROJECT_NOT_FOUND", "project.notFound", HttpStatus.NOT_FOUND));
 
-            // 使用向量相似度搜索查找相似任务
+            // Use vector similarity search to find similar tasks.
             List<ScoredTask> scoredTasks = findSimilarTasksUsingVectorSearch(request);
 
             String description;
@@ -98,7 +98,7 @@ public class TaskAiService {
                 generatedBy = "external-llm";
                 successCounter.increment();
             } catch (BusinessException ex) {
-                // 降级策略：AI 服务不可用时，返回基础模板
+                // Fallback strategy: AI service unavailable — return a basic template.
                 description = buildFallbackDescription(request, scoredTasks);
                 generatedBy = "fallback-template";
                 fallbackCounter.increment();
@@ -114,11 +114,11 @@ public class TaskAiService {
                             .build())
                     .toList();
 
-            // 保存日志，失败不影响主流程
+            // Save the generation log; failure must not affect the main flow.
             try {
                 saveLog(request, userId, description, similarTasks);
             } catch (Exception ex) {
-                // 日志保存失败不应影响主功能，仅记录错误
+                // Log save failure must not affect the main flow — record the error only.
                 System.err.println("Failed to save AI generation log: " + ex.getMessage());
             }
 
@@ -132,26 +132,26 @@ public class TaskAiService {
     }
 
     /**
-     * 使用向量数据库查找相似任务
+     * Find similar tasks using the vector database.
      */
     private List<ScoredTask> findSimilarTasksUsingVectorSearch(GenerateTaskDescriptionRequest request) {
         if (!aiEnabled || embeddingService == null) {
-            // AI 未启用时，使用关键词匹配作为降级方案
+            // AI is disabled — fall back to keyword matching.
             return findSimilarTasksUsingKeywordMatch(request);
         }
 
         try {
-            // 生成查询文本的向量
+            // Generate the embedding vector for the query text.
             String queryText = embeddingService.buildTaskEmbeddingText(
                     request.getTitle(),
-                    null, // 新任务还没有描述
+                    null, // new task has no description yet
                     request.getType(),
                     request.getPriority()
             );
 
             PGvector queryEmbedding = embeddingService.generateEmbedding(queryText);
 
-            // 使用向量相似度搜索
+            // Use vector similarity search.
             List<Task> similarTasks = taskRepository.findSimilarTasksByEmbedding(
                     request.getProjectId(),
                     queryEmbedding.toString(),
@@ -159,10 +159,10 @@ public class TaskAiService {
                     maxSimilarTasks
             );
 
-            // 计算相似度分数（基于向量距离）
+            // Compute similarity scores (based on vector distance ranking).
             return similarTasks.stream()
                     .map(task -> {
-                        // 向量余弦距离已经在查询中排序，这里给一个基于排名的分数
+                        // Vector cosine distance is already sorted in the query; assign a rank-based score here.
                         double similarity = calculateVectorSimilarityScore(task, request);
                         return new ScoredTask(task, similarity);
                     })
@@ -170,14 +170,14 @@ public class TaskAiService {
                     .toList();
 
         } catch (Exception ex) {
-            // 向量搜索失败时降级到关键词匹配
+            // Vector search failed — fall back to keyword matching.
             System.err.println("Vector search failed, falling back to keyword match: " + ex.getMessage());
             return findSimilarTasksUsingKeywordMatch(request);
         }
     }
 
     /**
-     * 关键词匹配降级方案（原有逻辑）
+     * Keyword-match fallback strategy (original logic).
      */
     private List<ScoredTask> findSimilarTasksUsingKeywordMatch(GenerateTaskDescriptionRequest request) {
         List<Task> candidateTasks = taskRepository.findByProjectIdOrderByUpdatedAtDesc(
@@ -196,24 +196,24 @@ public class TaskAiService {
     }
 
     /**
-     * 基于向量搜索结果计算相似度分数
-     * 结合向量距离排名和任务属性匹配
+     * Calculate a similarity score from vector search results,
+     * combining the vector distance ranking with task attribute matching.
      */
     private double calculateVectorSimilarityScore(Task task, GenerateTaskDescriptionRequest request) {
-        double score = 0.7; // 基础分数（因为已经通过向量搜索筛选）
+        double score = 0.7; // base score (task already passed the vector search filter)
 
-        // 任务类型匹配加分
+        // Bonus for matching task type.
         if (task.getType() != null && task.getType().name().equalsIgnoreCase(request.getType())) {
             score += 0.15;
         }
 
-        // 优先级匹配加分
+        // Bonus for matching priority.
         if (request.getPriority() != null && task.getPriority() != null
                 && task.getPriority().name().equalsIgnoreCase(request.getPriority())) {
             score += 0.10;
         }
 
-        // 故事点匹配加分
+        // Bonus for matching story points.
         if (request.getStoryPoints() != null && task.getStoryPoints() != null
                 && request.getStoryPoints().compareTo(task.getStoryPoints()) == 0) {
             score += 0.05;
@@ -342,18 +342,18 @@ public class TaskAiService {
 
     private String buildFallbackDescription(GenerateTaskDescriptionRequest request, List<ScoredTask> scoredTasks) {
         StringBuilder builder = new StringBuilder();
-        builder.append("任务：").append(request.getTitle()).append("\n\n");
-        builder.append("类型：").append(request.getType()).append("\n");
+        builder.append("Task: ").append(request.getTitle()).append("\n\n");
+        builder.append("Type: ").append(request.getType()).append("\n");
         if (request.getPriority() != null) {
-            builder.append("优先级：").append(request.getPriority()).append("\n");
+            builder.append("Priority: ").append(request.getPriority()).append("\n");
         }
         if (request.getStoryPoints() != null) {
-            builder.append("故事点：").append(formatDecimal(request.getStoryPoints())).append("\n");
+            builder.append("Story points: ").append(formatDecimal(request.getStoryPoints())).append("\n");
         }
-        builder.append("\n请根据任务标题补充详细描述、验收标准和技术方案。");
+        builder.append("\nPlease expand with a detailed description, acceptance criteria, and technical approach based on the task title.");
 
         if (!scoredTasks.isEmpty()) {
-            builder.append("\n\n参考相似任务：\n");
+            builder.append("\n\nReference similar tasks:\n");
             for (int i = 0; i < Math.min(3, scoredTasks.size()); i++) {
                 Task task = scoredTasks.get(i).task();
                 builder.append("- ").append(task.getTaskKey()).append(": ").append(task.getTitle()).append("\n");

@@ -43,7 +43,7 @@ public class TaskAiController {
             Authentication authentication) {
         JwtTokenProvider.UserPrincipal principal = (JwtTokenProvider.UserPrincipal) authentication.getPrincipal();
 
-        // 速率限制检查
+        // Rate limit check.
         String rateLimitKey = "ai_gen_user_" + principal.getId();
         boolean allowed = rateLimitService.checkRateLimit(
                 rateLimitKey,

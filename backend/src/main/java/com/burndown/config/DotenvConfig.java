@@ -6,7 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * 加载 .env 文件中的环境变量
+ * Loads environment variables from the .env file.
  */
 @Slf4j
 @Configuration
@@ -20,12 +20,12 @@ public class DotenvConfig {
                     .ignoreIfMissing()
                     .load();
 
-            // 将 .env 中的变量设置到系统环境变量
+            // Set variables from .env into system properties.
             dotenv.entries().forEach(entry -> {
                 String key = entry.getKey();
                 String value = entry.getValue();
 
-                // 只有当系统环境变量不存在时才设置
+                // Only set the property if the system environment variable is not already defined.
                 if (System.getenv(key) == null) {
                     System.setProperty(key, value);
                     log.debug("Loaded environment variable from .env: {}", key);

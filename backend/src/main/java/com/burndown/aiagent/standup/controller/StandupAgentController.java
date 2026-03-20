@@ -18,13 +18,13 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/agent/standup")
 @RequiredArgsConstructor
-@Tag(name = "Standup Agent", description = "Scrum 站会助手 API")
+@Tag(name = "Standup Agent", description = "Scrum standup assistant API")
 public class StandupAgentController {
 
     private final StandupAgentService standupAgentService;
 
     @PostMapping("/query")
-    @Operation(summary = "站会问答", description = "处理站会相关问题，返回基于 AI 的回答")
+    @Operation(summary = "Standup Q&A", description = "Process standup-related questions and return AI-powered answers")
     public ApiResponse<StandupQueryResponse> query(
             @Valid @RequestBody StandupQueryRequest request,
             Authentication authentication) {

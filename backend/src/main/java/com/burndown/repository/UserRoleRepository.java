@@ -18,7 +18,7 @@ public interface UserRoleRepository extends JpaRepository<UserRole, Long> {
     @Query("SELECT ur.roleId FROM UserRole ur WHERE ur.userId = :userId")
     List<Long> findRoleIdsByUserId(Long userId);
 
-    // 优化的权限查询 - 一次性获取用户所有权限，避免N+1查询
+    // Optimized permission query — fetches all user permissions in one query to avoid N+1 queries.
     @Query("SELECT DISTINCT p.code FROM UserRole ur " +
            "JOIN Role r ON ur.roleId = r.id " +
            "JOIN r.permissions p " +

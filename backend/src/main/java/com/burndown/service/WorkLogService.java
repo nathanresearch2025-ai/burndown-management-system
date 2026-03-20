@@ -32,15 +32,15 @@ public class WorkLogService {
             throw new RuntimeException("Work log already exists for this date");
         }
 
-        // 计算新的已用工时
+        // Calculate the new total time spent.
         BigDecimal currentTimeSpent = task.getTimeSpent() != null ? task.getTimeSpent() : BigDecimal.ZERO;
         BigDecimal newTimeSpent = currentTimeSpent.add(request.getTimeSpent());
 
-        // 基于预估工时自动计算剩余工时
+        // Automatically calculate remaining hours based on original estimate.
         BigDecimal originalEstimate = task.getOriginalEstimate() != null ? task.getOriginalEstimate() : BigDecimal.ZERO;
         BigDecimal calculatedRemaining = originalEstimate.subtract(newTimeSpent);
 
-        // 如果用户提供了剩余工时，使用用户提供的值；否则使用计算值
+        // Use the user-provided remaining estimate if present; otherwise use the calculated value.
         BigDecimal finalRemaining = request.getRemainingEstimate() != null
             ? request.getRemainingEstimate()
             : calculatedRemaining;
@@ -55,7 +55,7 @@ public class WorkLogService {
 
         workLog = workLogRepository.save(workLog);
 
-        // 更新任务的工时信息
+        // Update the task's time tracking fields.
         task.setTimeSpent(newTimeSpent);
         task.setRemainingEstimate(finalRemaining);
         taskRepository.save(task);

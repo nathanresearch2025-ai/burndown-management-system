@@ -21,7 +21,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/agent/tools")
 @RequiredArgsConstructor
-@Tag(name = "LangChain Tools", description = "工具型接口供 LangChain 使用")
+@Tag(name = "LangChain Tools", description = "Tool endpoints used by the LangChain sidecar")
 public class LangchainToolController {
 
     private final StandupTaskTools standupTaskTools;
@@ -30,7 +30,7 @@ public class LangchainToolController {
     private final BurndownPointRepository burndownPointRepository;
 
     @RequestMapping(value = "/in-progress-tasks", method = {RequestMethod.GET, RequestMethod.POST})
-    @Operation(summary = "获取进行中任务列表")
+    @Operation(summary = "Get list of in-progress tasks")
     public String inProgressTasks(@RequestBody(required = false) LangchainToolRequest request,
                                    @RequestParam(required = false) Long projectId,
                                    @RequestParam(required = false) Long userId) {
@@ -38,7 +38,7 @@ public class LangchainToolController {
         log.info("Request body: {}", request);
         log.info("Query params - projectId: {}, userId: {}", projectId, userId);
 
-        // 支持 POST (body) 和 GET (query params)
+        // Supports both POST (request body) and GET (query params).
         Long finalProjectId = request != null ? request.getProjectId() : projectId;
         Long finalUserId = request != null ? request.getUserId() : userId;
 
@@ -55,7 +55,7 @@ public class LangchainToolController {
     }
 
     @RequestMapping(value = "/sprint-burndown", method = {RequestMethod.GET, RequestMethod.POST})
-    @Operation(summary = "获取 Sprint 燃尽图数据")
+    @Operation(summary = "Get Sprint burndown chart data")
     public String sprintBurndown(@RequestBody(required = false) LangchainToolRequest request,
                                  @RequestParam(required = false) Long sprintId) {
         log.info("=== [LangchainToolController] /sprint-burndown called ===");
@@ -76,7 +76,7 @@ public class LangchainToolController {
     }
 
     @RequestMapping(value = "/burndown-risk", method = {RequestMethod.GET, RequestMethod.POST})
-    @Operation(summary = "评估燃尽图风险")
+    @Operation(summary = "Evaluate burndown risk")
     public String burndownRisk(@RequestBody(required = false) LangchainToolRequest request,
                                @RequestParam(required = false) Long sprintId) {
         log.info("=== [LangchainToolController] /burndown-risk called ===");
@@ -89,7 +89,7 @@ public class LangchainToolController {
         BurndownPoint latestPoint = getLatestBurndownPoint(finalSprintId);
         if (latestPoint == null) {
             log.warn("No burndown data found for sprintId: {}", finalSprintId);
-            return "暂无燃尽图数据，无法评估风险";
+            return "No burndown data available — cannot evaluate risk.";
         }
 
         BigDecimal planned = latestPoint.getIdealRemaining();

@@ -58,9 +58,9 @@ public class AuthService {
 
         user = userRepository.save(user);
 
-        // 分配角色
+        // Assign role.
         if (request.getRoleId() != null) {
-            // 验证角色是否可用于注册
+            // Verify the role is available for self-registration.
             roleService.getAvailableRolesForRegistration().stream()
                     .filter(role -> role.getId().equals(request.getRoleId()))
                     .findFirst()
@@ -69,7 +69,7 @@ public class AuthService {
             userRoleService.assignRoleToUser(user.getId(), request.getRoleId());
         }
 
-        // 加载用户权限 - 使用优化的查询方法
+        // Load user permissions — uses an optimized query method.
         Set<String> permissions = userRoleService.getUserPermissionCodes(user.getId());
 
         String token = jwtTokenProvider.generateToken(user.getId(), user.getUsername(), permissions);
@@ -101,7 +101,7 @@ public class AuthService {
         user.setLastLoginAt(LocalDateTime.now());
         userRepository.save(user);
 
-        // 加载用户权限 - 使用优化的查询方法
+        // Load user permissions — uses an optimized query method.
         Set<String> permissions = userRoleService.getUserPermissionCodes(user.getId());
 
         String token = jwtTokenProvider.generateToken(user.getId(), user.getUsername(), permissions);

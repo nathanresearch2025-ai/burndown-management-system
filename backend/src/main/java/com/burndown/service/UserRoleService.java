@@ -51,11 +51,11 @@ public class UserRoleService {
             throw new ResourceNotFoundException("user.notFound");
         }
 
-        // 优化：使用单次查询获取所有权限，避免N+1查询
+        // Optimization: fetch all permissions in a single query to avoid N+1 queries.
         List<String> permissionCodes = userRoleRepository.findPermissionCodesByUserId(userId);
 
-        // 如果需要返回完整的PermissionResponse，可以再查询一次
-        // 但对于大多数场景，只需要权限代码即可
+        // If full PermissionResponse objects are needed, a second query can be made here.
+        // For most scenarios, permission codes alone are sufficient.
         List<Long> roleIds = userRoleRepository.findRoleIdsByUserId(userId);
         List<Role> roles = roleRepository.findAllById(roleIds);
 
@@ -71,13 +71,13 @@ public class UserRoleService {
                 .collect(Collectors.toSet());
     }
 
-    // 新增：优化的权限代码查询方法（用于JWT生成）
-    // @Cacheable(value = "permissions", key = "'user:' + #userId")  // 暂时禁用缓存以避免 Set/ArrayList 类型转换问题
+    // Optimized permission-code query method (used for JWT generation).
+    // @Cacheable(value = "permissions", key = "'user:' + #userId")  // temporarily disabled to avoid Set/ArrayList type-conversion issues
     public Set<String> getUserPermissionCodes(Long userId) {
         if (!userRepository.existsById(userId)) {
             throw new ResourceNotFoundException("user.notFound");
         }
-        // 将查询结果转换为 Set，避免类型转换异常
+        // Convert the query result to a Set to avoid type-conversion exceptions.
         return new HashSet<>(userRoleRepository.findPermissionCodesByUserId(userId));
     }
 
@@ -88,10 +88,10 @@ public class UserRoleService {
             throw new ResourceNotFoundException("user.notFound");
         }
 
-        // 删除现有角色
+        // Remove existing roles.
         userRoleRepository.findByUserId(userId).forEach(userRoleRepository::delete);
 
-        // 分配新角色
+        // Assign new roles.
         for (Long roleId : request.getRoleIds()) {
             if (!roleRepository.existsById(roleId)) {
                 throw new ResourceNotFoundException("role.notFound");
@@ -117,7 +117,7 @@ public class UserRoleService {
         UserRole userRole = new UserRole();
         userRole.setUserId(userId);
         userRole.setRoleId(roleId);
-        userRole.setAssignedBy(userId); // 自注册时，分配者为自己
+        userRole.setAssignedBy(userId); // self-registration: the assigner is the user themselves
         userRoleRepository.save(userRole);
     }
 

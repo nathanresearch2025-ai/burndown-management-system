@@ -16,11 +16,11 @@ public class RateLimitService {
     }
 
     /**
-     * 检查是否超过速率限制
-     * @param key 限流键（例如：userId 或 projectId）
-     * @param maxRequests 最大请求数
-     * @param duration 时间窗口
-     * @return true 如果未超限，false 如果已超限
+     * Check whether the rate limit has been exceeded.
+     * @param key rate limit key (e.g. userId or projectId)
+     * @param maxRequests maximum number of requests allowed
+     * @param duration time window
+     * @return true if within the limit, false if the limit has been exceeded
      */
     public boolean checkRateLimit(String key, int maxRequests, Duration duration) {
         try {
@@ -28,24 +28,24 @@ public class RateLimitService {
             Long currentCount = redisTemplate.opsForValue().increment(rateLimitKey);
 
             if (currentCount == null) {
-                // Redis 不可用，降级处理：允许请求
+                // Redis unavailable, fallback: allow the request.
                 return true;
             }
 
             if (currentCount == 1) {
-                // 第一次请求，设置过期时间
+                // First request — set the expiry time.
                 redisTemplate.expire(rateLimitKey, duration.toMillis(), TimeUnit.MILLISECONDS);
             }
 
             return currentCount <= maxRequests;
         } catch (Exception e) {
-            // Redis 异常，降级处理：允许请求
+            // Redis exception, fallback: allow the request.
             return true;
         }
     }
 
     /**
-     * 获取剩余请求次数
+     * Get the number of remaining allowed requests.
      */
     public long getRemainingRequests(String key, int maxRequests) {
         String rateLimitKey = "rate_limit:" + key;
@@ -55,7 +55,7 @@ public class RateLimitService {
     }
 
     /**
-     * 获取重置时间（秒）
+     * Get the time until the rate limit resets (in seconds).
      */
     public long getResetTime(String key) {
         String rateLimitKey = "rate_limit:" + key;

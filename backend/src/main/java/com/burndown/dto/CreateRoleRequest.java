@@ -7,15 +7,15 @@ import java.util.Set;
 
 @Data
 public class CreateRoleRequest {
-    @NotBlank(message = "角色名称不能为空")
+    @NotBlank(message = "Role name must not be blank")
     private String name;
 
-    @NotBlank(message = "角色编码不能为空")
+    @NotBlank(message = "Role code must not be blank")
     private String code;
 
     private String description;
 
-    @NotNull(message = "是否启用不能为空")
+    @NotNull(message = "isActive must not be null")
     private Boolean isActive;
 
     private Set<Long> permissionIds;
