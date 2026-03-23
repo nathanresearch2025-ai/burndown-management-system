@@ -488,19 +488,20 @@ INSERT INTO burndown_points (sprint_id, point_date, actual_remaining, ideal_rema
                                                                                               ((SELECT id FROM sprints WHERE name = 'Sprint 1 - 用户服务'), '2026-02-28', 0, 0, NOW());
 
 -- Insert sample burndown points for Sprint 2 (active, HIGH risk - actual far above ideal)
--- Sprint 2: 2026-03-09~03-28, total 23sp, today=2026-03-23
+-- Sprint 2: 2026-03-09~03-28, total 47sp (9 tasks), today=2026-03-23
+-- Ideal burn rate: 47sp / 14 working days ≈ 3.36 sp/day
 INSERT INTO burndown_points (sprint_id, point_date, actual_remaining, ideal_remaining, calculated_at) VALUES
-((SELECT id FROM sprints WHERE name = 'Sprint 2 - 订单服务'), '2026-03-09', 23, 23, NOW()),
-((SELECT id FROM sprints WHERE name = 'Sprint 2 - 订单服务'), '2026-03-10', 23, 21, NOW()),
-((SELECT id FROM sprints WHERE name = 'Sprint 2 - 订单服务'), '2026-03-11', 22, 19, NOW()),
-((SELECT id FROM sprints WHERE name = 'Sprint 2 - 订单服务'), '2026-03-12', 21, 17, NOW()),
-((SELECT id FROM sprints WHERE name = 'Sprint 2 - 订单服务'), '2026-03-13', 20, 15, NOW()),
-((SELECT id FROM sprints WHERE name = 'Sprint 2 - 订单服务'), '2026-03-16', 20, 13, NOW()),
-((SELECT id FROM sprints WHERE name = 'Sprint 2 - 订单服务'), '2026-03-17', 18, 11, NOW()),
-((SELECT id FROM sprints WHERE name = 'Sprint 2 - 订单服务'), '2026-03-18', 17, 9, NOW()),
-((SELECT id FROM sprints WHERE name = 'Sprint 2 - 订单服务'), '2026-03-19', 17, 7, NOW()),
-((SELECT id FROM sprints WHERE name = 'Sprint 2 - 订单服务'), '2026-03-20', 16, 5, NOW()),
-((SELECT id FROM sprints WHERE name = 'Sprint 2 - 订单服务'), '2026-03-23', 15, 3, NOW());
+((SELECT id FROM sprints WHERE name = 'Sprint 2 - 订单服务'), '2026-03-09', 47, 47, NOW()),
+((SELECT id FROM sprints WHERE name = 'Sprint 2 - 订单服务'), '2026-03-10', 47, 44, NOW()),
+((SELECT id FROM sprints WHERE name = 'Sprint 2 - 订单服务'), '2026-03-11', 45, 41, NOW()),
+((SELECT id FROM sprints WHERE name = 'Sprint 2 - 订单服务'), '2026-03-12', 43, 37, NOW()),
+((SELECT id FROM sprints WHERE name = 'Sprint 2 - 订单服务'), '2026-03-13', 41, 34, NOW()),
+((SELECT id FROM sprints WHERE name = 'Sprint 2 - 订单服务'), '2026-03-16', 40, 30, NOW()),
+((SELECT id FROM sprints WHERE name = 'Sprint 2 - 订单服务'), '2026-03-17', 38, 27, NOW()),
+((SELECT id FROM sprints WHERE name = 'Sprint 2 - 订单服务'), '2026-03-18', 36, 24, NOW()),
+((SELECT id FROM sprints WHERE name = 'Sprint 2 - 订单服务'), '2026-03-19', 35, 20, NOW()),
+((SELECT id FROM sprints WHERE name = 'Sprint 2 - 订单服务'), '2026-03-20', 33, 17, NOW()),
+((SELECT id FROM sprints WHERE name = 'Sprint 2 - 订单服务'), '2026-03-23', 30, 13, NOW());
 
 -- =============================================
 -- 5. Agent Audit Tables
