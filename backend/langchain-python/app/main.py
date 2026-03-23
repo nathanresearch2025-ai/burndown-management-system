@@ -8,8 +8,26 @@ from .schemas import StandupQueryRequest, StandupQueryResponse
 # tools_concurrent_enabled：读取 TOOLS_CONCURRENT 环境变量，决定工具是否并行调用
 # log_step_timing_enabled：读取 LOG_STEP_TIMING 环境变量，决定是否打印耗时日志
 from .agents import run_multi_agent, run_fast_pipeline, pipeline_mode, tools_concurrent_enabled, log_step_timing_enabled
+from .graph import build_graph
+from .graph_v2 import build_graph_v2
 import logging
 import time
+
+# 编译 LangGraph 图实例（懒加载单例）
+_langgraph_app = None
+_langgraph_v2_app = None
+
+def get_langgraph_app():
+    global _langgraph_app
+    if _langgraph_app is None:
+        _langgraph_app = build_graph()
+    return _langgraph_app
+
+def get_langgraph_v2_app():
+    global _langgraph_v2_app
+    if _langgraph_v2_app is None:
+        _langgraph_v2_app = build_graph_v2()
+    return _langgraph_v2_app
 
 # 配置根日志：INFO 级别，格式包含时间、模块名、日志级别和消息
 logging.basicConfig(
@@ -45,7 +63,45 @@ async def standup_query(request: StandupQueryRequest):  # FastAPI 自动将请�
         # 记录请求开始时间，用于计算总耗时
         start = time.time()
 
-        if mode == "legacy":
+        if mode == "langgraph_v2":
+            # LangGraph v2：Supervisor + DataAgent(ReAct) + AnalystAgent + WriterAgent
+            graph_app = get_langgraph_v2_app()
+            initial_state = {
+                "question": request.question,
+                "project_id": request.projectId,
+                "sprint_id": request.sprintId,
+                "user_id": request.userId,
+                "trace_id": request.traceId,
+                "next": "data_agent",
+                "tools_used": [],
+                "evidence": [],
+                "react_messages": [],
+                "risk_level": "UNKNOWN",
+                "answer": "",
+            }
+            final_state = await graph_app.ainvoke(initial_state)
+            answer = final_state.get("answer", "")
+            tools_used = final_state.get("tools_used", [])
+            evidence = final_state.get("evidence", [])
+            risk_level = final_state.get("risk_level", "UNKNOWN")
+
+        elif mode == "langgraph":
+            # LangGraph pipeline：图式多节点，支持条件分支、工具重试、兜底解析
+            graph_app = get_langgraph_app()
+            initial_state = {
+                "question": request.question,
+                "project_id": request.projectId,
+                "sprint_id": request.sprintId,
+                "user_id": request.userId,
+                "trace_id": request.traceId,
+            }
+            final_state = await graph_app.ainvoke(initial_state)
+            answer = final_state.get("answer", "")
+            tools_used = final_state.get("tools_used", [])
+            evidence = final_state.get("evidence", [])
+            risk_level = final_state.get("risk_level", "UNKNOWN")
+
+        elif mode == "legacy":
             # Legacy pipeline：同步调用，在协程中运行会阻塞事件循环（生产环境不推荐）
             result = run_multi_agent(
                 question=request.question,

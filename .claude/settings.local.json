@@ -80,7 +80,8 @@
       "Bash(curl -s -X POST http://localhost:8091/agent/standup/query \\\\\n  -H \"Content-Type: application/json\" \\\\\n  -d '{\"question\":\"今日站会摘要\",\"projectId\":1,\"sprintId\":null,\"userId\":1,\"timezone\":null,\"traceId\":\"test-001\"}' \\\\\n  2>&1)",
       "Bash(pkill -f \"uvicorn app.main:app\" 2>/dev/null; sleep 1\nnetstat -ano 2>/dev/null | grep 8091 | grep LISTEN && echo \"port still in use\" || echo \"port free\")",
       "Bash(taskkill //PID 10996 //F 2>&1 && sleep 2 && echo \"killed\")",
-      "Bash(curl -s -X POST http://localhost:8091/agent/standup/query \\\\\n  -H \"Content-Type: application/json\" \\\\\n  -d '{\"question\":\"今日站会摘要\",\"projectId\":1,\"sprintId\":null,\"userId\":1,\"timezone\":null,\"traceId\":\"test-001\"}' 2>&1)"
+      "Bash(curl -s -X POST http://localhost:8091/agent/standup/query \\\\\n  -H \"Content-Type: application/json\" \\\\\n  -d '{\"question\":\"今日站会摘要\",\"projectId\":1,\"sprintId\":null,\"userId\":1,\"timezone\":null,\"traceId\":\"test-001\"}' 2>&1)",
+      "Bash(python:*)"
     ]
   }
 }
