@@ -1,0 +1,98 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: burndown-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: burndown-backend
+  template:
+    metadata:
+      labels:
+        app: burndown-backend
+    spec:
+      hostNetwork: true
+      containers:
+      - name: burndown-backend
+        image: docker.io/rancher/mirrored-library-busybox:1.36.1
+        imagePullPolicy: IfNotPresent
+        command:
+        - /usr/local/java/bin/java
+        args:
+        - -Xms256m
+        - -Xmx512m
+        - -XX:+UseG1GC
+        - -XX:MaxGCPauseMillis=200
+        - -XX:+UseStringDeduplication
+        - -XX:+HeapDumpOnOutOfMemoryError
+        - -XX:HeapDumpPath=/tmp/heapdump.hprof
+        - -Djava.security.egd=file:/dev/./urandom
+        - -jar
+        - /app/burndown-management-1.0.0.jar
+        - --spring.profiles.active=docker
+        ports:
+        - containerPort: 8080
+        env:
+        - name: SPRING_DATASOURCE_URL
+          value: jdbc:postgresql://159.75.202.106:30432/burndown_db
+        - name: SPRING_DATASOURCE_USERNAME
+          value: postgres
+        - name: SPRING_DATASOURCE_PASSWORD
+          value: root
+        - name: SPRING_DATA_REDIS_HOST
+          value: 159.75.202.106
+        - name: SPRING_DATA_REDIS_PORT
+          value: "30379"
+        - name: JAVA_HOME
+          value: /usr/local/java
+        volumeMounts:
+        - name: java-home
+          mountPath: /usr/local/java
+          readOnly: true
+        - name: app-jar
+          mountPath: /app
+          readOnly: true
+        - name: etc-dir
+          mountPath: /etc
+          readOnly: true
+        - name: lib64
+          mountPath: /lib64
+          readOnly: true
+        - name: usrlib64
+          mountPath: /usr/lib64
+          readOnly: true
+      volumes:
+      - name: java-home
+        hostPath:
+          path: /usr/lib/jvm/java-21-konajdk-21.0.10-1.oc9
+          type: Directory
+      - name: app-jar
+        hostPath:
+          path: /myapp/backend/target
+          type: Directory
+      - name: etc-dir
+        hostPath:
+          path: /etc
+          type: Directory
+      - name: lib64
+        hostPath:
+          path: /lib64
+          type: Directory
+      - name: usrlib64
+        hostPath:
+          path: /usr/lib64
+          type: Directory
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: burndown-backend
+spec:
+  selector:
+    app: burndown-backend
+  ports:
+  - port: 8080
+    targetPort: 8080
+    nodePort: 30080
+  type: NodePort
