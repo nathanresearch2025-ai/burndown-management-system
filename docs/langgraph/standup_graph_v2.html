@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>LangGraph v2 多Agent+ReAct 站会问答图</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      min-height: 100vh;
+      padding: 32px;
+    }
+    h1 { text-align:center; font-size:1.6rem; font-weight:700; color:#a78bfa; margin-bottom:6px; }
+    .subtitle { text-align:center; font-size:0.85rem; color:#64748b; margin-bottom:32px; }
+    .section-title { font-size:1rem; font-weight:600; color:#94a3b8; margin:32px auto 12px; max-width:960px; padding-left:4px; }
+    .graph-container {
+      background:#1e2130; border:1px solid #2d3148; border-radius:16px;
+      padding:32px; max-width:960px; margin:0 auto 16px;
+      box-shadow:0 4px 32px rgba(0,0,0,0.4);
+    }
+    .legend {
+      max-width:960px; margin:0 auto 40px;
+      display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px;
+    }
+    .legend-card { background:#1e2130; border:1px solid #2d3148; border-radius:12px; padding:16px 20px; }
+    .legend-card h3 { font-size:0.78rem; text-transform:uppercase; letter-spacing:0.08em; color:#64748b; margin-bottom:10px; }
+    .legend-item { display:flex; align-items:flex-start; gap:10px; margin-bottom:8px; font-size:0.83rem; }
+    .dot { width:11px; height:11px; border-radius:50%; flex-shrink:0; margin-top:3px; }
+    .node-name { color:#cbd5e1; font-weight:600; min-width:130px; }
+    .node-desc { color:#64748b; line-height:1.5; }
+    .badge { display:inline-block; padding:2px 8px; border-radius:99px; font-size:0.72rem; font-weight:600; margin-right:4px; }
+    .badge-react { background:#1d4ed8; color:#bfdbfe; }
+    .badge-llm   { background:#6d28d9; color:#ddd6fe; }
+    .badge-sup   { background:#065f46; color:#a7f3d0; }
+  </style>
+</head>
+<body>
+
+<h1>LangGraph v2 · 多 Agent + ReAct 站会问答</h1>
+<p class="subtitle">Supervisor 编排 · DataAgent(ReAct) · AnalystAgent · WriterAgent<br>backend/langchain-python/app/graph_v2/graph.py</p>
+
+<p class="section-title">整体 Supervisor 编排图</p>
+<div class="graph-container">
+  <div class="mermaid">
+flowchart TD
+    START(["⬤ START"])
+    END_NODE(["⬤ END"])
+
+    SUP["🧠 Supervisor\nLLM 决定下一步"]
+    DA["⚙️ DataAgent\nReAct 循环·工具调用"]
+    AA["📊 AnalystAgent\n风险分析"]
+    WA["✍️ WriterAgent\n生成站会报告"]
+
+    START --> SUP
+
+    SUP -- "next=data_agent" --> DA
+    SUP -- "next=analyst_agent" --> AA
+    SUP -- "next=writer_agent" --> WA
+    SUP -- "next=FINISH" --> END_NODE
+
+    DA -- "完成，回 Supervisor" --> SUP
+    AA -- "完成，回 Supervisor" --> SUP
+    WA -- "完成，回 Supervisor" --> SUP
+
+    style START   fill:#4ade80,color:#000,stroke:none
+    style END_NODE fill:#4ade80,color:#000,stroke:none
+    style SUP fill:#065f46,color:#fff,stroke:#34d399,stroke-width:2px
+    style DA  fill:#1d4ed8,color:#fff,stroke:#60a5fa,stroke-width:1.5px
+    style AA  fill:#0f766e,color:#fff,stroke:#14b8a6,stroke-width:1.5px
+    style WA  fill:#6d28d9,color:#fff,stroke:#a78bfa,stroke-width:1.5px
+  </div>
+</div>
+
+<p class="section-title">DataAgent 内部 ReAct 循环</p>
+<div class="graph-container">
+  <div class="mermaid">
+flowchart TD
+    DA_IN(["DataAgent 入口"])
+    THINK["💭 Thought\nLLM 思考：需要哪些数据？"]
+    ACTION["⚡ Action\n选择并调用工具"]
+    OBS["👁️ Observation\n查看工具返回结果"]
+    ENOUGH{"信息是否足够？"}
+    SUMMARY["📝 输出数据摘要\n供 AnalystAgent 使用"]
+    DA_OUT(["返回 Supervisor"])
+
+    DA_IN --> THINK
+    THINK --> ACTION
+    ACTION --> |"get_in_progress_tasks\nget_sprint_burndown\nevaluate_burndown_risk"| OBS
+    OBS --> ENOUGH
+    ENOUGH -- "否，继续" --> THINK
+    ENOUGH -- "是" --> SUMMARY
+    SUMMARY --> DA_OUT
+
+    style DA_IN  fill:#1d4ed8,color:#fff,stroke:none
+    style DA_OUT fill:#1d4ed8,color:#fff,stroke:none
+    style THINK  fill:#1e3a5f,color:#bfdbfe,stroke:#3b82f6
+    style ACTION fill:#1e3a5f,color:#bfdbfe,stroke:#3b82f6
+    style OBS    fill:#1e3a5f,color:#bfdbfe,stroke:#3b82f6
+    style ENOUGH fill:#92400e,color:#fff,stroke:#f59e0b
+    style SUMMARY fill:#1d4ed8,color:#fff,stroke:#60a5fa
+  </div>
+</div>
+
+<p class="section-title">与 v1 对比</p>
+<div class="graph-container">
+  <div class="mermaid">
+flowchart LR
+    subgraph V1["v1 · 确定性工作流"]
+      direction TB
+      V1A["validate_input"] --> V1B["fetch_core_tools\n代码写死并行调3工具"]
+      V1B --> V1C["validate_data"]
+      V1C --> V1D["summarize\n单次LLM"]
+      V1D --> V1E["finalize"]
+    end
+
+    subgraph V2["v2 · 多Agent+ReAct"]
+      direction TB
+      V2A["Supervisor\nLLM编排"] --> V2B["DataAgent\nReAct循环·LLM自主决定工具"]
+      V2B --> V2A
+      V2A --> V2C["AnalystAgent\n专项风险分析"]
+      V2C --> V2A
+      V2A --> V2D["WriterAgent\n专项报告生成"]
+      V2D --> V2A
+    end
+
+    style V1A fill:#374151,color:#9ca3af,stroke:#4b5563
+    style V1B fill:#374151,color:#9ca3af,stroke:#4b5563
+    style V1C fill:#374151,color:#9ca3af,stroke:#4b5563
+    style V1D fill:#374151,color:#9ca3af,stroke:#4b5563
+    style V1E fill:#374151,color:#9ca3af,stroke:#4b5563
+    style V2A fill:#065f46,color:#fff,stroke:#34d399
+    style V2B fill:#1d4ed8,color:#fff,stroke:#60a5fa
+    style V2C fill:#0f766e,color:#fff,stroke:#14b8a6
+    style V2D fill:#6d28d9,color:#fff,stroke:#a78bfa
+  </div>
+</div>
+
+<div class="legend">
+  <div class="legend-card">
+    <h3>节点说明</h3>
+    <div class="legend-item">
+      <span class="dot" style="background:#34d399"></span>
+      <span>
+        <span class="node-name">Supervisor</span>
+        <span class="badge badge-llm">LLM</span><span class="badge badge-sup">编排</span><br>
+        <span class="node-desc">读取当前状态，LLM 决定 next 字段路由到哪个 Agent，全部完成后输出 FINISH</span>
+      </span>
+    </div>
+    <div class="legend-item">
+      <span class="dot" style="background:#60a5fa"></span>
+      <span>
+        <span class="node-name">DataAgent</span>
+        <span class="badge badge-react">ReAct</span><span class="badge badge-llm">LLM</span><br>
+        <span class="node-desc">create_react_agent 内部循环：LLM 自主决定调用哪些工具、调用几次，直到信息足够</span>
+      </span>
+    </div>
+    <div class="legend-item">
+      <span class="dot" style="background:#14b8a6"></span>
+      <span>
+        <span class="node-name">AnalystAgent</span>
+        <span class="badge badge-llm">LLM</span><br>
+        <span class="node-desc">专项风险分析，输出 risk_level + analysis + key_findings JSON</span>
+      </span>
+    </div>
+    <div class="legend-item">
+      <span class="dot" style="background:#a78bfa"></span>
+      <span>
+        <span class="node-name">WriterAgent</span>
+        <span class="badge badge-llm">LLM</span><br>
+        <span class="node-desc">整合数据+分析，生成面向团队的中文站会报告 JSON</span>
+      </span>
+    </div>
+  </div>
+
+  <div class="legend-card">
+    <h3>v1 vs v2 核心差异</h3>
+    <div class="legend-item" style="flex-direction:column;gap:6px">
+      <span style="color:#9ca3af;font-size:0.8rem">工具调用决策</span>
+      <span class="node-desc">v1：Python 代码写死并行调 3 个工具<br>v2：DataAgent ReAct 循环，LLM 自主决定</span>
+    </div>
+    <div class="legend-item" style="flex-direction:column;gap:6px">
+      <span style="color:#9ca3af;font-size:0.8rem">任务分工</span>
+      <span class="node-desc">v1：单次 LLM 汇总所有输出<br>v2：3 个专业 Agent 分别负责数据/分析/写作</span>
+    </div>
+    <div class="legend-item" style="flex-direction:column;gap:6px">
+      <span style="color:#9ca3af;font-size:0.8rem">编排方式</span>
+      <span class="node-desc">v1：Python 条件路由（确定性）<br>v2：Supervisor LLM 动态编排</span>
+    </div>
+    <div class="legend-item" style="flex-direction:column;gap:6px">
+      <span style="color:#9ca3af;font-size:0.8rem">推理可见性</span>
+      <span class="node-desc">v1：无推理过程<br>v2：react_messages 记录完整 Thought/Action/Observation</span>
+    </div>
+  </div>
+
+  <div class="legend-card">
+    <h3>状态流转（StandupV2State）</h3>
+    <div class="legend-item" style="flex-direction:column;gap:4px">
+      <span style="color:#60a5fa;font-size:0.8rem">输入</span>
+      <span class="node-desc">question · project_id · sprint_id · user_id · trace_id</span>
+    </div>
+    <div class="legend-item" style="flex-direction:column;gap:4px">
+      <span style="color:#34d399;font-size:0.8rem">Supervisor 控制</span>
+      <span class="node-desc">next: data_agent | analyst_agent | writer_agent | FINISH</span>
+    </div>
+    <div class="legend-item" style="flex-direction:column;gap:4px">
+      <span style="color:#60a5fa;font-size:0.8rem">DataAgent 输出</span>
+      <span class="node-desc">data_summary · tools_used · react_messages</span>
+    </div>
+    <div class="legend-item" style="flex-direction:column;gap:4px">
+      <span style="color:#14b8a6;font-size:0.8rem">AnalystAgent 输出</span>
+      <span class="node-desc">risk_level · analysis · evidence</span>
+    </div>
+    <div class="legend-item" style="flex-direction:column;gap:4px">
+      <span style="color:#a78bfa;font-size:0.8rem">WriterAgent 输出</span>
+      <span class="node-desc">answer · evidence（合并）</span>
+    </div>
+  </div>
+</div>
+
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'dark',
+    flowchart: { curve: 'basis', padding: 20 },
+    themeVariables: {
+      primaryColor: '#1e2130',
+      primaryTextColor: '#e2e8f0',
+      primaryBorderColor: '#4a5568',
+      lineColor: '#64748b',
+      fontSize: '14px'
+    }
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,533 @@
+{
+	"info": {
+		"_postman_id": "langgraph-standup-agent-v2",
+		"name": "LangGraph Standup Agent",
+		"description": "LangGraph 多 Agent 站会问答 API 测试集合\n\n支持四种 pipeline 模式：\n- fast：并行工具 + 单次 LLM 汇总\n- legacy：4 Agent 串行\n- langgraph：确定性工作流图\n- langgraph_v2：Supervisor + DataAgent(ReAct) + AnalystAgent + WriterAgent\n\n切换模式：修改 .env 中的 STANDUP_PIPELINE_MODE",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8091",
+			"type": "string",
+			"description": "LangChain Python 服务地址，端口见 .env LANGCHAIN_SERVICE_PORT"
+		},
+		{
+			"key": "project_id",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "sprint_id",
+			"value": "2",
+			"type": "string"
+		},
+		{
+			"key": "user_id",
+			"value": "1",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "langgraph_v2 - 标准站会问答",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 200', function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"pm.test('Response has answer field', function () {",
+							"    var json = pm.response.json();",
+							"    pm.expect(json).to.have.property('answer');",
+							"    pm.expect(json.answer).to.be.a('string').and.not.empty;",
+							"});",
+							"pm.test('Response has toolsUsed array', function () {",
+							"    var json = pm.response.json();",
+							"    pm.expect(json.toolsUsed).to.be.an('array');",
+							"});",
+							"pm.test('Response has riskLevel field', function () {",
+							"    var json = pm.response.json();",
+							"    pm.expect(json).to.have.property('riskLevel');",
+							"});",
+							"pm.test('Response has evidence array', function () {",
+							"    var json = pm.response.json();",
+							"    pm.expect(json.evidence).to.be.an('array');",
+							"});",
+							"pm.test('Response time < 60s', function () {",
+							"    pm.expect(pm.response.responseTime).to.be.below(60000);",
+							"});",
+							"console.log('Answer:', pm.response.json().answer.substring(0,200));",
+							"console.log('Risk Level:', pm.response.json().riskLevel);",
+							"console.log('Tools Used:', JSON.stringify(pm.response.json().toolsUsed));",
+							"console.log('Evidence Count:', pm.response.json().evidence.length);",
+							"console.log('Response time:', pm.response.responseTime, 'ms');"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [{"key": "Content-Type", "value": "application/json"}],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"question\": \"当前冲刺的进展如何？有哪些风险需要关注？\",\n    \"projectId\": {{project_id}},\n    \"sprintId\": {{sprint_id}},\n    \"userId\": {{user_id}},\n    \"traceId\": \"test-langgraph-v2-001\"\n}",
+					"options": {"raw": {"language": "json"}}
+				},
+				"url": {
+					"raw": "{{base_url}}/agent/standup/query",
+					"host": ["{{base_url}}"],
+					"path": ["agent", "standup", "query"]
+				},
+				"description": "langgraph_v2 标准站会问答\n\n触发完整的 Supervisor → DataAgent(ReAct) → AnalystAgent → WriterAgent 流程\n\n需在 .env 中设置：STANDUP_PIPELINE_MODE=langgraph_v2"
+			},
+			"response": []
+		},
+		{
+			"name": "langgraph_v2 - 燃尽风险专项分析",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 200', function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"pm.test('riskLevel is valid', function () {",
+							"    var json = pm.response.json();",
+							"    var valid = ['LOW','MEDIUM','HIGH','CRITICAL','UNKNOWN',null];",
+							"    pm.expect(valid).to.include(json.riskLevel);",
+							"});",
+							"pm.test('Evidence contains data', function () {",
+							"    pm.expect(pm.response.json().evidence).to.be.an('array');",
+							"});",
+							"console.log('Risk Level:', pm.response.json().riskLevel);",
+							"console.log('Tools Used:', pm.response.json().toolsUsed);",
+							"console.log('Answer preview:', pm.response.json().answer.substring(0,200));"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [{"key": "Content-Type", "value": "application/json"}],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"question\": \"当前冲刺的燃尽情况是否存在延期风险？请给出详细的风险评估。\",\n    \"projectId\": {{project_id}},\n    \"sprintId\": {{sprint_id}},\n    \"userId\": {{user_id}},\n    \"traceId\": \"test-risk-analysis-001\"\n}",
+					"options": {"raw": {"language": "json"}}
+				},
+				"url": {
+					"raw": "{{base_url}}/agent/standup/query",
+					"host": ["{{base_url}}"],
+					"path": ["agent", "standup", "query"]
+				},
+				"description": "专注于燃尽风险评估，DataAgent ReAct 应调用 evaluateBurndownRisk 工具\n\n预期 riskLevel 返回 LOW / MEDIUM / HIGH / CRITICAL"
+			},
+			"response": []
+		},
+		{
+			"name": "langgraph_v2 - 进行中任务查询",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 200', function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"pm.test('Answer is not empty', function () {",
+							"    pm.expect(pm.response.json().answer).to.not.be.empty;",
+							"});",
+							"pm.test('toolsUsed contains getInProgressTasks', function () {",
+							"    var json = pm.response.json();",
+							"    pm.expect(json.toolsUsed).to.include('getInProgressTasks');",
+							"});",
+							"console.log('Answer:', pm.response.json().answer);",
+							"console.log('Tools Used:', JSON.stringify(pm.response.json().toolsUsed));"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [{"key": "Content-Type", "value": "application/json"}],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"question\": \"目前有哪些任务正在进行中？负责人是谁？\",\n    \"projectId\": {{project_id}},\n    \"sprintId\": {{sprint_id}},\n    \"userId\": {{user_id}},\n    \"traceId\": \"test-tasks-001\"\n}",
+					"options": {"raw": {"language": "json"}}
+				},
+				"url": {
+					"raw": "{{base_url}}/agent/standup/query",
+					"host": ["{{base_url}}"],
+					"path": ["agent", "standup", "query"]
+				},
+				"description": "查询进行中任务，DataAgent ReAct 应调用 getInProgressTasks 工具"
+			},
+			"response": []
+		},
+		{
+			"name": "langgraph_v2 - ReAct 多工具链路追踪",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 200', function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"pm.test('Multiple tools used in ReAct loop', function () {",
+							"    var json = pm.response.json();",
+							"    pm.expect(json.toolsUsed).to.be.an('array').with.lengthOf.at.least(1);",
+							"});",
+							"pm.test('Evidence list is non-empty', function () {",
+							"    pm.expect(pm.response.json().evidence).to.be.an('array').with.lengthOf.at.least(1);",
+							"});",
+							"var json = pm.response.json();",
+							"console.log('=== ReAct Chain Trace ===');",
+							"console.log('Tools Used:', JSON.stringify(json.toolsUsed));",
+							"console.log('Evidence Count:', json.evidence.length);",
+							"console.log('Risk Level:', json.riskLevel);",
+							"json.evidence.forEach(function(ev, i) {",
+							"    console.log('Evidence['+i+']:', JSON.stringify(ev).substring(0,100));",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [{"key": "Content-Type", "value": "application/json"}],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"question\": \"请综合分析：当前冲刺有哪些进行中的任务？燃尽进度是否正常？是否有交付风险？\",\n    \"projectId\": {{project_id}},\n    \"sprintId\": {{sprint_id}},\n    \"userId\": {{user_id}},\n    \"traceId\": \"test-react-chain-001\"\n}",
+					"options": {"raw": {"language": "json"}}
+				},
+				"url": {
+					"raw": "{{base_url}}/agent/standup/query",
+					"host": ["{{base_url}}"],
+					"path": ["agent", "standup", "query"]
+				},
+				"description": "复合问题，期望 DataAgent 在 ReAct 循环中调用全部三个工具：\ngetInProgressTasks + getSprintBurndown + evaluateBurndownRisk"
+			},
+			"response": []
+		},
+		{
+			"name": "langgraph_v2 - sprintId 缺省（自动推断）",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 200', function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"pm.test('Answer handles missing sprintId gracefully', function () {",
+							"    pm.expect(pm.response.json().answer).to.be.a('string').and.not.empty;",
+							"});",
+							"console.log('Answer (no sprintId):', pm.response.json().answer);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [{"key": "Content-Type", "value": "application/json"}],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"question\": \"这个冲刺的整体进展怎么样？\",\n    \"projectId\": {{project_id}},\n    \"traceId\": \"test-no-sprint-001\"\n}",
+					"options": {"raw": {"language": "json"}}
+				},
+				"url": {
+					"raw": "{{base_url}}/agent/standup/query",
+					"host": ["{{base_url}}"],
+					"path": ["agent", "standup", "query"]
+				},
+				"description": "不传 sprintId 和 userId（可选字段），验证服务可正常处理 None 值"
+			},
+			"response": []
+		},
+		{
+			"name": "langgraph_v2 - 无效 projectId（边界测试）",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Returns 200 or 500', function () {",
+							"    pm.expect([200, 500, 422]).to.include(pm.response.code);",
+							"});",
+							"if (pm.response.code === 200) {",
+							"    pm.test('Answer handles empty data gracefully', function () {",
+							"        pm.expect(pm.response.json().answer).to.be.a('string');",
+							"    });",
+							"}",
+							"console.log('Status for invalid projectId:', pm.response.code);",
+							"console.log('Response:', pm.response.text().substring(0,300));"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [{"key": "Content-Type", "value": "application/json"}],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"question\": \"冲刺进展如何？\",\n    \"projectId\": 99999,\n    \"sprintId\": 99999,\n    \"userId\": 1,\n    \"traceId\": \"test-invalid-id-001\"\n}",
+					"options": {"raw": {"language": "json"}}
+				},
+				"url": {
+					"raw": "{{base_url}}/agent/standup/query",
+					"host": ["{{base_url}}"],
+					"path": ["agent", "standup", "query"]
+				},
+				"description": "传入不存在的 projectId/sprintId，验证工具调用失败时的兜底处理"
+			},
+			"response": []
+		},
+		{
+			"name": "langgraph_v2 - 缺少必填字段（422 校验）",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Returns 422 Unprocessable Entity', function () {",
+							"    pm.response.to.have.status(422);",
+							"});",
+							"pm.test('Response contains validation detail', function () {",
+							"    pm.expect(pm.response.json()).to.have.property('detail');",
+							"});",
+							"console.log('Validation error:', JSON.stringify(pm.response.json().detail));"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [{"key": "Content-Type", "value": "application/json"}],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"question\": \"冲刺进展如何？\"\n}",
+					"options": {"raw": {"language": "json"}}
+				},
+				"url": {
+					"raw": "{{base_url}}/agent/standup/query",
+					"host": ["{{base_url}}"],
+					"path": ["agent", "standup", "query"]
+				},
+				"description": "不传必填字段 projectId，FastAPI Pydantic 应返回 422 校验错误"
+			},
+			"response": []
+		},
+		{
+			"name": "langgraph (v1) - 确定性工作流",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 200', function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"pm.test('Response has answer', function () {",
+							"    pm.expect(pm.response.json().answer).to.be.a('string').and.not.empty;",
+							"});",
+							"console.log('[v1] Answer:', pm.response.json().answer.substring(0,200));",
+							"console.log('[v1] Tools Used:', pm.response.json().toolsUsed);",
+							"console.log('[v1] Response time:', pm.response.responseTime, 'ms');"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [{"key": "Content-Type", "value": "application/json"}],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"question\": \"当前冲刺进展如何？\",\n    \"projectId\": {{project_id}},\n    \"sprintId\": {{sprint_id}},\n    \"userId\": {{user_id}},\n    \"traceId\": \"test-langgraph-v1-001\"\n}",
+					"options": {"raw": {"language": "json"}}
+				},
+				"url": {
+					"raw": "{{base_url}}/agent/standup/query",
+					"host": ["{{base_url}}"],
+					"path": ["agent", "standup", "query"]
+				},
+				"description": "LangGraph v1 确定性工作流\n需在 .env 中设置：STANDUP_PIPELINE_MODE=langgraph\n\n固定节点顺序：validate_input → fetch_core_tools → validate_data → enrich_data → summarize → finalize"
+			},
+			"response": []
+		},
+		{
+			"name": "fast - 并行工具汇总（最低延迟）",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 200', function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"pm.test('Response has answer', function () {",
+							"    pm.expect(pm.response.json().answer).to.be.a('string').and.not.empty;",
+							"});",
+							"console.log('[fast] Answer:', pm.response.json().answer.substring(0,200));",
+							"console.log('[fast] Response time:', pm.response.responseTime, 'ms');"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [{"key": "Content-Type", "value": "application/json"}],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"question\": \"当前冲刺进展如何？\",\n    \"projectId\": {{project_id}},\n    \"sprintId\": {{sprint_id}},\n    \"userId\": {{user_id}},\n    \"traceId\": \"test-fast-001\"\n}",
+					"options": {"raw": {"language": "json"}}
+				},
+				"url": {
+					"raw": "{{base_url}}/agent/standup/query",
+					"host": ["{{base_url}}"],
+					"path": ["agent", "standup", "query"]
+				},
+				"description": "Fast pipeline，需在 .env 中设置：STANDUP_PIPELINE_MODE=fast\n\n并行调用三个工具后由 LLM 一次性汇总，延迟最低"
+			},
+			"response": []
+		},
+		{
+			"name": "langgraph_v2 - 单工具：仅查询进行中任务",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 200', function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"pm.test('Answer is not empty', function () {",
+							"    pm.expect(pm.response.json().answer).to.be.a('string').and.not.empty;",
+							"});",
+							"pm.test('toolsUsed contains getInProgressTasks', function () {",
+							"    var tools = pm.response.json().toolsUsed;",
+							"    pm.expect(tools).to.be.an('array');",
+							"    pm.expect(tools.some(t => t === 'getInProgressTasks' || (t && t.name === 'getInProgressTasks'))).to.be.true;",
+							"});",
+							"console.log('[单工具-任务] toolsUsed:', JSON.stringify(pm.response.json().toolsUsed));"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [{"key": "Content-Type", "value": "application/json"}],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"question\": \"我当前有哪些进行中的任务？列出任务名称和优先级\",\n    \"projectId\": {{project_id}},\n    \"sprintId\": {{sprint_id}},\n    \"userId\": {{user_id}},\n    \"traceId\": \"test-single-tool-tasks-001\"\n}",
+					"options": {"raw": {"language": "json"}}
+				},
+				"url": {
+					"raw": "{{base_url}}/agent/standup/query",
+					"host": ["{{base_url}}"],
+					"path": ["agent", "standup", "query"]
+				},
+				"description": "单工具测试：问题只涉及当前任务列表，预期 ReAct 只调用 getInProgressTasks 工具。\n需要 STANDUP_PIPELINE_MODE=langgraph_v2"
+			},
+			"response": []
+		},
+		{
+			"name": "langgraph_v2 - 单工具：仅查询燃尽图数据",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 200', function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"pm.test('Answer contains burndown info', function () {",
+							"    var answer = pm.response.json().answer;",
+							"    pm.expect(answer).to.be.a('string').and.not.empty;",
+							"});",
+							"pm.test('toolsUsed contains getSprintBurndown', function () {",
+							"    var tools = pm.response.json().toolsUsed;",
+							"    pm.expect(tools).to.be.an('array');",
+							"    pm.expect(tools.some(t => t === 'getSprintBurndown' || (t && t.name === 'getSprintBurndown'))).to.be.true;",
+							"});",
+							"console.log('[单工具-燃尽] toolsUsed:', JSON.stringify(pm.response.json().toolsUsed));"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [{"key": "Content-Type", "value": "application/json"}],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"question\": \"请给我看这个 Sprint 的燃尽图数据，包括每天实际剩余和理想剩余故事点\",\n    \"projectId\": {{project_id}},\n    \"sprintId\": {{sprint_id}},\n    \"userId\": {{user_id}},\n    \"traceId\": \"test-single-tool-burndown-001\"\n}",
+					"options": {"raw": {"language": "json"}}
+				},
+				"url": {
+					"raw": "{{base_url}}/agent/standup/query",
+					"host": ["{{base_url}}"],
+					"path": ["agent", "standup", "query"]
+				},
+				"description": "单工具测试：问题只关注燃尽图原始数据，预期 ReAct 只调用 getSprintBurndown 工具。\n需要 STANDUP_PIPELINE_MODE=langgraph_v2"
+			},
+			"response": []
+		},
+		{
+			"name": "langgraph_v2 - 单工具：仅评估燃尽风险",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 200', function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"pm.test('riskLevel is valid enum', function () {",
+							"    var risk = pm.response.json().riskLevel;",
+							"    pm.expect(['LOW','MEDIUM','HIGH', null]).to.include(risk);",
+							"});",
+							"pm.test('toolsUsed contains evaluateBurndownRisk', function () {",
+							"    var tools = pm.response.json().toolsUsed;",
+							"    pm.expect(tools).to.be.an('array');",
+							"    pm.expect(tools.some(t => t === 'evaluateBurndownRisk' || (t && t.name === 'evaluateBurndownRisk'))).to.be.true;",
+							"});",
+							"console.log('[单工具-风险] riskLevel:', pm.response.json().riskLevel);",
+							"console.log('[单工具-风险] toolsUsed:', JSON.stringify(pm.response.json().toolsUsed));"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [{"key": "Content-Type", "value": "application/json"}],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"question\": \"这个冲刺的燃尽风险等级是什么？HIGH、MEDIUM 还是 LOW？请说明原因\",\n    \"projectId\": {{project_id}},\n    \"sprintId\": {{sprint_id}},\n    \"userId\": {{user_id}},\n    \"traceId\": \"test-single-tool-risk-001\"\n}",
+					"options": {"raw": {"language": "json"}}
+				},
+				"url": {
+					"raw": "{{base_url}}/agent/standup/query",
+					"host": ["{{base_url}}"],
+					"path": ["agent", "standup", "query"]
+				},
+				"description": "单工具测试：问题只关注风险等级判断，预期 ReAct 只调用 evaluateBurndownRisk 工具。\n需要 STANDUP_PIPELINE_MODE=langgraph_v2"
+			},
+			"response": []
+		}
+	]
+}

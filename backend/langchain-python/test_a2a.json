@@ -1,0 +1,7 @@
+{
+  "question": "测试 A2A 调用链",
+  "projectId": 1,
+  "sprintId": 1,
+  "userId": 1,
+  "traceId": "a2a-test-001"
+}
