@@ -1,7 +1,7 @@
 -- Project Service Schema
-CREATE SCHEMA IF NOT EXISTS pg_project;
+CREATE SCHEMA IF NOT EXISTS ms_project;
 
-SET search_path TO pg_project;
+SET search_path TO ms_project;
 
 CREATE TABLE IF NOT EXISTS projects (
     id          BIGSERIAL PRIMARY KEY,

@@ -5,7 +5,7 @@ spring:
   application:
     name: task-service
   datasource:
-    url: jdbc:postgresql://159.75.202.106:5432/burndown_db?currentSchema=pg_task
+    url: jdbc:postgresql://159.75.202.106:5432/burndown_db?currentSchema=ms_task
     username: postgres
     password: postgres
     hikari:
@@ -17,7 +17,7 @@ spring:
     show-sql: false
     properties:
       hibernate:
-        default_schema: pg_task
+        default_schema: ms_task
         format_sql: true
   data:
     redis:

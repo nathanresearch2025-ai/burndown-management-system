@@ -1,0 +1,83 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: nacos
+  labels:
+    app: nacos
+spec:
+  type: NodePort
+  ports:
+    - port: 8848
+      targetPort: 8848
+      nodePort: 30848
+      name: http
+    - port: 9848
+      targetPort: 9848
+      nodePort: 30948
+      name: grpc
+  selector:
+    app: nacos
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nacos
+  labels:
+    app: nacos
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nacos
+  template:
+    metadata:
+      labels:
+        app: nacos
+    spec:
+      hostNetwork: true
+      containers:
+      - name: nacos
+        image: nacos/nacos-server:v2.3.0
+        ports:
+        - containerPort: 8848
+          name: http
+        - containerPort: 9848
+          name: grpc
+        env:
+        - name: MODE
+          value: "standalone"
+        - name: PREFER_HOST_MODE
+          value: "hostname"
+        - name: NACOS_AUTH_ENABLE
+          value: "true"
+        - name: NACOS_AUTH_IDENTITY_KEY
+          value: "nacos"
+        - name: NACOS_AUTH_IDENTITY_VALUE
+          value: "nacos"
+        - name: NACOS_AUTH_TOKEN
+          value: "SecretKey012345678901234567890123456789012345678901234567890123456789"
+        - name: JVM_XMS
+          value: "512m"
+        - name: JVM_XMX
+          value: "512m"
+        - name: JVM_XMN
+          value: "256m"
+        resources:
+          requests:
+            memory: "768Mi"
+            cpu: "250m"
+          limits:
+            memory: "1536Mi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /nacos/actuator/health
+            port: 8848
+          initialDelaySeconds: 60
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /nacos/actuator/health
+            port: 8848
+          initialDelaySeconds: 30
+          periodSeconds: 5

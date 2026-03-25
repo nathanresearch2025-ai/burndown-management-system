@@ -20,7 +20,7 @@ spring:
     show-sql: false
     properties:
       hibernate:
-        default_schema: pg_auth
+        default_schema: ms_auth
         dialect: org.hibernate.dialect.PostgreSQLDialect
   data:
     redis:

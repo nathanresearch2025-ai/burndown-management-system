@@ -1,7 +1,7 @@
 -- Task Service Schema
-CREATE SCHEMA IF NOT EXISTS pg_task;
+CREATE SCHEMA IF NOT EXISTS ms_task;
 
-SET search_path TO pg_task;
+SET search_path TO ms_task;
 
 CREATE TABLE IF NOT EXISTS tasks (
     id                 BIGSERIAL PRIMARY KEY,

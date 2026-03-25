@@ -1,7 +1,7 @@
 -- Auth Service Schema
-CREATE SCHEMA IF NOT EXISTS pg_auth;
+CREATE SCHEMA IF NOT EXISTS ms_auth;
 
-SET search_path TO pg_auth;
+SET search_path TO ms_auth;
 
 CREATE TABLE IF NOT EXISTS permissions (
     id          BIGSERIAL PRIMARY KEY,

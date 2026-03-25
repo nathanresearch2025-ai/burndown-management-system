@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 
 @Data
 @Entity
-@Table(name = "agent_tool_call_logs", schema = "pg_ai")
+@Table(name = "agent_tool_call_logs", schema = "ms_ai")
 @EntityListeners(AuditingEntityListener.class)
 public class AgentToolCallLog {
 

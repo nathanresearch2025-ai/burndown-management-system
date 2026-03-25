@@ -8,7 +8,7 @@ import java.util.Set;
 
 @Data
 @Entity
-@Table(name = "roles", schema = "pg_auth")
+@Table(name = "roles", schema = "ms_auth")
 public class Role {
 
     @Id
@@ -33,7 +33,7 @@ public class Role {
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
         name = "role_permissions",
-        schema = "pg_auth",
+        schema = "ms_auth",
         joinColumns = @JoinColumn(name = "role_id"),
         inverseJoinColumns = @JoinColumn(name = "permission_id")
     )

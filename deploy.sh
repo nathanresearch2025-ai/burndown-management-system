@@ -15,6 +15,8 @@ FRONTEND_PORT="30173"          # Frontend NodePort
 BACKEND_PORT="30080"           # Backend NodePort
 POSTGRES_PORT="30432"          # PostgreSQL NodePort
 REDIS_PORT="30379"             # Redis NodePort
+RABBITMQ_PORT="30672"          # RabbitMQ AMQP NodePort
+RABBITMQ_MGMT_PORT="31672"     # RabbitMQ Management NodePort
 PROMETHEUS_PORT="30090"        # Prometheus NodePort
 GRAFANA_PORT="30300"           # Grafana NodePort
 ALERTMANAGER_PORT="30093"      # Alertmanager NodePort
@@ -163,6 +165,7 @@ kubectl delete -f "${K8S_DIR}/backend.yaml" --ignore-not-found=true
 kubectl delete -f "${K8S_DIR}/frontend.yaml" --ignore-not-found=true
 kubectl delete -f "${K8S_DIR}/postgres.yaml" --ignore-not-found=true
 kubectl delete -f "${K8S_DIR}/redis.yaml" --ignore-not-found=true
+kubectl delete -f "${K8S_DIR}/rabbitmq.yaml" --ignore-not-found=true
 echo -e "${GREEN}✓ 旧部署已删除${NC}"
 
 # 等待 Pod 完全终止
@@ -170,7 +173,7 @@ echo "等待 Pod 完全终止..."
 sleep 5
 
 # 5. 部署 Redis
-echo -e "${YELLOW}[步骤 5/9] 部署 Redis...${NC}"
+echo -e "${YELLOW}[步骤 5/10] 部署 Redis...${NC}"
 kubectl apply -f "${K8S_DIR}/redis.yaml"
 echo -e "${GREEN}✓ Redis 部署完成${NC}"
 
@@ -179,8 +182,18 @@ echo "等待 Redis 就绪..."
 kubectl wait --for=condition=ready pod -l app=redis --timeout=120s || true
 sleep 3
 
+# 5.5 部署 RabbitMQ
+echo -e "${YELLOW}[步骤 6/10] 部署 RabbitMQ...${NC}"
+kubectl apply -f "${K8S_DIR}/rabbitmq.yaml"
+echo -e "${GREEN}✓ RabbitMQ 部署完成${NC}"
+
+# 等待 RabbitMQ 就绪
+echo "等待 RabbitMQ 就绪..."
+kubectl wait --for=condition=ready pod -l app=rabbitmq --timeout=180s || true
+sleep 3
+
 # 6. 部署 PostgreSQL
-echo -e "${YELLOW}[步骤 6/9] 部署 PostgreSQL...${NC}"
+echo -e "${YELLOW}[步骤 7/10] 部署 PostgreSQL...${NC}"
 kubectl apply -f "${K8S_DIR}/postgres.yaml"
 echo -e "${GREEN}✓ PostgreSQL 部署完成${NC}"
 
@@ -190,7 +203,7 @@ kubectl wait --for=condition=ready pod -l app=postgres --timeout=120s || true
 sleep 10
 
 # 7. 导入数据库初始化脚本
-echo -e "${YELLOW}[步骤 7/9] 导入数据库初始化脚本...${NC}"
+echo -e "${YELLOW}[步骤 8/10] 导入数据库初始化脚本...${NC}"
 POSTGRES_POD=$(kubectl get pod -l app=postgres -o jsonpath='{.items[0].metadata.name}')
 if [ -z "$POSTGRES_POD" ]; then
     echo -e "${RED}✗ 错误: 找不到 PostgreSQL Pod${NC}"
@@ -211,7 +224,7 @@ else
 fi
 
 # 8. 部署 Backend
-echo -e "${YELLOW}[步骤 8/9] 部署 Backend...${NC}"
+echo -e "${YELLOW}[步骤 9/10] 部署 Backend...${NC}"
 kubectl apply -f "${K8S_DIR}/backend.yaml"
 echo -e "${GREEN}✓ Backend 部署完成${NC}"
 
@@ -221,7 +234,7 @@ kubectl wait --for=condition=ready pod -l app=burndown-backend --timeout=120s ||
 sleep 3
 
 # 9. 部署 Frontend
-echo -e "${YELLOW}[步骤 9/9] 部署 Frontend...${NC}"
+echo -e "${YELLOW}[步骤 10/10] 部署 Frontend...${NC}"
 kubectl apply -f "${K8S_DIR}/frontend.yaml"
 echo -e "${GREEN}✓ Frontend 部署完成${NC}"
 
@@ -248,12 +261,15 @@ echo "  kubectl logs -l app=burndown-backend"
 echo "  kubectl logs -l app=burndown-frontend"
 echo "  kubectl logs -l app=postgres"
 echo "  kubectl logs -l app=redis"
+echo "  kubectl logs -l app=rabbitmq"
 echo ""
 echo "访问地址:"
 echo "  Frontend: http://${EXTERNAL_IP}:${FRONTEND_PORT}"
 echo "  Backend API: http://${EXTERNAL_IP}:${BACKEND_PORT}"
 echo "  PostgreSQL: ${EXTERNAL_IP}:${POSTGRES_PORT}"
 echo "  Redis: ${EXTERNAL_IP}:${REDIS_PORT}"
+echo "  RabbitMQ AMQP: ${EXTERNAL_IP}:${RABBITMQ_PORT}"
+echo "  RabbitMQ 管理界面: http://${EXTERNAL_IP}:${RABBITMQ_MGMT_PORT} (用户名: admin, 密码: admin123)"
 echo ""
 echo "监控访问地址:"
 echo "  Prometheus: http://${EXTERNAL_IP}:${PROMETHEUS_PORT}"

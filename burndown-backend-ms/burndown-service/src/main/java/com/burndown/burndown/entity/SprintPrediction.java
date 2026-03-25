@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 
 @Data
 @Entity
-@Table(name = "sprint_predictions", schema = "pg_burndown")
+@Table(name = "sprint_predictions", schema = "ms_burndown")
 @EntityListeners(AuditingEntityListener.class)
 public class SprintPrediction {
 

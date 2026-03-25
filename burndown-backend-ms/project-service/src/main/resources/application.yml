@@ -18,7 +18,7 @@ spring:
     show-sql: false
     properties:
       hibernate:
-        default_schema: pg_project
+        default_schema: ms_project
         dialect: org.hibernate.dialect.PostgreSQLDialect
   data:
     redis:

@@ -1,7 +1,7 @@
 -- AI Agent Service Schema
-CREATE SCHEMA IF NOT EXISTS pg_ai;
+CREATE SCHEMA IF NOT EXISTS ms_ai;
 
-SET search_path TO pg_ai;
+SET search_path TO ms_ai;
 
 CREATE TABLE IF NOT EXISTS agent_chat_sessions (
     id          BIGSERIAL PRIMARY KEY,
