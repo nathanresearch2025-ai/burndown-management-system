@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 
 @Data
 @Entity
-@Table(name = "agent_chat_sessions", schema = "pg_ai")
+@Table(name = "agent_chat_sessions", schema = "ms_ai")
 @EntityListeners(AuditingEntityListener.class)
 public class AgentChatSession {
 

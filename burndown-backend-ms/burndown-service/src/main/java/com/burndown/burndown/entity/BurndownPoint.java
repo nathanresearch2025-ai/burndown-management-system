@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 
 @Data
 @Entity
-@Table(name = "burndown_points", schema = "pg_burndown")
+@Table(name = "burndown_points", schema = "ms_burndown")
 @EntityListeners(AuditingEntityListener.class)
 public class BurndownPoint {
 

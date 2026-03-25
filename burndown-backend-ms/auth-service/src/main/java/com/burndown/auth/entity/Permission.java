@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 
 @Data
 @Entity
-@Table(name = "permissions", schema = "pg_auth")
+@Table(name = "permissions", schema = "ms_auth")
 public class Permission {
 
     @Id

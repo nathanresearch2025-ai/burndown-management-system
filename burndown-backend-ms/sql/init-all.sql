@@ -1,6 +1,6 @@
 -- ============================================================
 -- Burndown Microservices - 一键初始化所有 Schema
--- 执行顺序：pg_auth -> pg_project -> pg_task -> pg_burndown -> pg_ai
+-- 执行顺序：ms_auth -> ms_project -> ms_task -> ms_burndown -> ms_ai
 -- 用法: psql -U postgres -d burndown_db -f init-all.sql
 -- ============================================================
 

@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 
 @Data
 @Entity
-@Table(name = "user_roles", schema = "pg_auth",
+@Table(name = "user_roles", schema = "ms_auth",
        uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "role_id"}))
 public class UserRole {
 

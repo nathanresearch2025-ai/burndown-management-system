@@ -1,7 +1,7 @@
 -- Burndown Service Schema
-CREATE SCHEMA IF NOT EXISTS pg_burndown;
+CREATE SCHEMA IF NOT EXISTS ms_burndown;
 
-SET search_path TO pg_burndown;
+SET search_path TO ms_burndown;
 
 CREATE TABLE IF NOT EXISTS burndown_points (
     id                BIGSERIAL PRIMARY KEY,
