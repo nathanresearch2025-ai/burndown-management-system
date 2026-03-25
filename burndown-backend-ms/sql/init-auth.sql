@@ -26,15 +26,21 @@ CREATE TABLE IF NOT EXISTS role_permissions (
 );
 
 CREATE TABLE IF NOT EXISTS users (
-    id           BIGSERIAL PRIMARY KEY,
-    username     VARCHAR(50)  NOT NULL UNIQUE,
-    email        VARCHAR(200) NOT NULL UNIQUE,
-    password     VARCHAR(255) NOT NULL,
-    display_name VARCHAR(100),
-    avatar_url   VARCHAR(500),
-    is_active    BOOLEAN     DEFAULT TRUE,
-    created_at   TIMESTAMP   DEFAULT NOW(),
-    updated_at   TIMESTAMP   DEFAULT NOW()
+    id                BIGSERIAL PRIMARY KEY,
+    username          VARCHAR(50)  NOT NULL UNIQUE,
+    email             VARCHAR(100) NOT NULL UNIQUE,
+    password_hash     VARCHAR(255) NOT NULL,
+    full_name         VARCHAR(100),
+    avatar_url        VARCHAR(500),
+    phone             VARCHAR(20),
+    timezone          VARCHAR(50)  DEFAULT 'Asia/Shanghai',
+    language          VARCHAR(10)  DEFAULT 'zh_CN',
+    is_active         BOOLEAN      DEFAULT TRUE,
+    is_email_verified BOOLEAN      DEFAULT FALSE,
+    last_login_at     TIMESTAMP,
+    created_at        TIMESTAMP    DEFAULT NOW(),
+    updated_at        TIMESTAMP    DEFAULT NOW(),
+    deleted_at        TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS user_roles (
@@ -87,7 +93,7 @@ WHERE r.code = 'VIEWER'
 ON CONFLICT DO NOTHING;
 
 -- Default admin user (password: admin123)
-INSERT INTO users (username, email, password, display_name, is_active) VALUES
+INSERT INTO users (username, email, password_hash, full_name, is_active) VALUES
     ('admin', 'admin@burndown.com', '$2a$04$oFCexP1rFTJqpVRLpH5XjOBt.yMFpPtb2P4hT9JvivKpSv8brkHqy', '系统管理员', true)
 ON CONFLICT (username) DO NOTHING;
 
