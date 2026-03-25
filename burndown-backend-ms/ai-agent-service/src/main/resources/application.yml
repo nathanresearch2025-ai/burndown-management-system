@@ -5,9 +5,9 @@ spring:
   application:
     name: ai-agent-service
   datasource:
-    url: jdbc:postgresql://159.75.202.106:5432/burndown_db?currentSchema=pg_ai
+    url: jdbc:postgresql://159.75.202.106:30432/burndown_db?currentSchema=pg_ai
     username: postgres
-    password: postgres
+    password: root
     hikari:
       maximum-pool-size: 15
       minimum-idle: 3
@@ -22,13 +22,15 @@ spring:
   data:
     redis:
       host: 159.75.202.106
-      port: 6379
+      port: 30379
       timeout: 2000ms
   cloud:
     nacos:
       discovery:
-        server-addr: 159.75.202.106:8848
+        server-addr: 159.75.202.106:30848
         namespace: ""
+        username: ${NACOS_USERNAME:nacos}
+        password: ${NACOS_PASSWORD:nacos}
 
 ai:
   enabled: false

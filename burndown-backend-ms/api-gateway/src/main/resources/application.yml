@@ -7,8 +7,14 @@ spring:
   cloud:
     nacos:
       discovery:
-        server-addr: ${NACOS_ADDR:159.75.202.106:8848}
+        server-addr: ${NACOS_ADDR:159.75.202.106:30848}
         namespace: ${NACOS_NAMESPACE:public}
+        naming-load-cache-at-start: false
+        username: ${NACOS_USERNAME:nacos}
+        password: ${NACOS_PASSWORD:nacos}
+      server-addr: ${NACOS_ADDR:159.75.202.106:30848}
+      username: ${NACOS_USERNAME:nacos}
+      password: ${NACOS_PASSWORD:nacos}
     gateway:
       discovery:
         locator:
@@ -47,7 +53,7 @@ spring:
   data:
     redis:
       host: ${REDIS_HOST:159.75.202.106}
-      port: ${REDIS_PORT:6379}
+      port: ${REDIS_PORT:30379}
 
 auth-service:
   url: ${AUTH_SERVICE_URL:http://159.75.202.106:8081}

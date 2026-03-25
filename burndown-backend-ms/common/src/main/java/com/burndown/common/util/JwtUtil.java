@@ -3,7 +3,6 @@ package com.burndown.common.util;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
-lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.security.KeyFactory;
@@ -16,9 +15,6 @@ import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
-
-@Slf4j
 @Component
 public class JwtUtil {
 
