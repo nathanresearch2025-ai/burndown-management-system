@@ -56,7 +56,7 @@ spring:
       port: ${REDIS_PORT:30379}
 
 auth-service:
-  url: ${AUTH_SERVICE_URL:http://159.75.202.106:8081}
+  url: ${AUTH_SERVICE_URL:http://localhost:8081}
 
 management:
   endpoints:
