@@ -5,9 +5,10 @@ SET search_path TO ms_task;
 
 CREATE TABLE IF NOT EXISTS tasks (
     id                 BIGSERIAL PRIMARY KEY,
-    task_key           VARCHAR(30)  UNIQUE,
+    task_key           VARCHAR(50)  UNIQUE,
     project_id         BIGINT       NOT NULL,
     sprint_id          BIGINT,
+    parent_id          BIGINT,
     title              VARCHAR(500) NOT NULL,
     description        TEXT,
     status             VARCHAR(20)  DEFAULT 'TODO',
@@ -21,6 +22,7 @@ CREATE TABLE IF NOT EXISTS tasks (
     time_spent         DECIMAL(10,2) DEFAULT 0,
     due_date           DATE,
     completed_at       TIMESTAMP,
+    sort_order         INTEGER      DEFAULT 0,
     created_at         TIMESTAMP    DEFAULT NOW(),
     updated_at         TIMESTAMP    DEFAULT NOW()
 );
