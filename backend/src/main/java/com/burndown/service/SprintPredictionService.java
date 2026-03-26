@@ -127,7 +127,7 @@ public class SprintPredictionService {
         // ==================== 第2类：Sprint 容量特征 ====================
         // 从 Sprint 实体中提取故事点信息，处理 null 值并转换为 double
         double committedSp = sprint.getCommittedPoints() != null ? sprint.getCommittedPoints().doubleValue() : 0.0;  // 初始承诺的故事点
-        double completedSp = sprint.getCompletedPoints() != null ? sprint.getCommittedPoints().doubleValue() : 0.0;  // 已完成的故事点
+        double completedSp = sprint.getCompletedPoints() != null ? sprint.getCompletedPoints().doubleValue() : 0.0;  // 已完成的故事点
         double remainingSp = Math.max(0, committedSp - completedSp);                                                 // 剩余故事点（确保非负）
 
         // 存储容量相关特征

@@ -1,0 +1,73 @@
+server:
+  port: 8000
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_ADDR:159.75.202.106:30848}
+        namespace: ${NACOS_NAMESPACE:public}
+        naming-load-cache-at-start: false
+        username: ${NACOS_USERNAME:nacos}
+        password: ${NACOS_PASSWORD:nacos}
+      server-addr: ${NACOS_ADDR:159.75.202.106:30848}
+      username: ${NACOS_USERNAME:nacos}
+      password: ${NACOS_PASSWORD:nacos}
+    gateway:
+      discovery:
+        locator:
+          enabled: false  # manual routing
+      routes:
+        # Auth Service
+        - id: auth-service
+          uri: lb://auth-service
+          predicates:
+            - Path=/api/v1/auth/**,/api/v1/users/**,/api/v1/roles/**,/api/v1/permissions/**
+
+        # Project Service
+        - id: project-service
+          uri: lb://project-service
+          predicates:
+            - Path=/api/v1/projects/**,/api/v1/sprints/**
+
+        # Task Service
+        - id: task-service
+          uri: lb://task-service
+          predicates:
+            - Path=/api/v1/tasks/**,/api/v1/worklogs/**
+
+        # Burndown Service
+        - id: burndown-service
+          uri: lb://burndown-service
+          predicates:
+            - Path=/api/v1/burndown/**,/api/v1/sprint-predictions/**
+
+        # AI Agent Service
+        - id: ai-agent-service
+          uri: lb://ai-agent-service
+          predicates:
+            - Path=/api/v1/tasks/ai/**,/api/v1/agent/**,/api/v1/embeddings/**,/api/v1/similarity/**
+
+  data:
+    redis:
+      host: ${REDIS_HOST:159.75.202.106}
+      port: ${REDIS_PORT:30379}
+
+auth-service:
+  url: ${AUTH_SERVICE_URL:http://localhost:8081}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.burndown.gateway: DEBUG
+    org.springframework.cloud.gateway: INFO
