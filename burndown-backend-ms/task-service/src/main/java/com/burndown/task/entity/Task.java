@@ -74,6 +74,9 @@ public class Task {
     @Column(name = "sort_order")
     private Integer sortOrder = 0;
 
+    @Column(name = "original_sprint_id")
+    private Long originalSprintId;
+
     @CreatedDate
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

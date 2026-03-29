@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS tasks (
     due_date           DATE,
     completed_at       TIMESTAMP,
     sort_order         INTEGER      DEFAULT 0,
+    original_sprint_id BIGINT,
     created_at         TIMESTAMP    DEFAULT NOW(),
     updated_at         TIMESTAMP    DEFAULT NOW()
 );

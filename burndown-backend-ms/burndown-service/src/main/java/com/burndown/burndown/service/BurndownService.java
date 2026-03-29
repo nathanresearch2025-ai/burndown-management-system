@@ -77,6 +77,12 @@ public class BurndownService {
         }
     }
 
+    @Transactional
+    public void deleteSprintPoints(Long sprintId) {
+        burndownPointRepository.deleteBySprintId(sprintId);
+        log.info("Deleted all burndown points for sprint {}", sprintId);
+    }
+
     private BigDecimal fetchSafe(java.util.function.Supplier<BigDecimal> supplier) {
         try {
             BigDecimal val = supplier.get();

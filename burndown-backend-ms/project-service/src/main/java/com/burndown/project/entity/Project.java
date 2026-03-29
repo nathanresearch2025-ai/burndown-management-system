@@ -46,7 +46,7 @@ public class Project {
     @Column(name = "end_date")
     private LocalDate endDate;
 
-    @Column(columnDefinition = "jsonb")
+    @Column(columnDefinition = "text")
     private String settings = "{}";
 
     @CreatedDate

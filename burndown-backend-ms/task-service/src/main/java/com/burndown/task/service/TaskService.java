@@ -56,7 +56,9 @@ public class TaskService {
             projectServiceClient.getSprint(task.getSprintId());
         }
         task.setReporterId(reporterId);
-        task.setStatus("TODO");
+        if (task.getStatus() == null || !VALID_STATUSES.contains(task.getStatus())) {
+            task.setStatus("TODO");
+        }
         // Generate task key: PROJECT-{id} pattern (simplified)
         Task saved = taskRepository.save(task);
         if (saved.getTaskKey() == null) {
@@ -110,6 +112,31 @@ public class TaskService {
             throw new ResourceNotFoundException("Task", id);
         }
         taskRepository.deleteById(id);
+    }
+
+    @Transactional
+    public int migrateUndoneTasks(Long fromSprintId, Long toSprintId) {
+        List<Task> undone = taskRepository.findBySprintIdAndStatusNot(fromSprintId, "DONE");
+        for (Task task : undone) {
+            task.setOriginalSprintId(fromSprintId);
+            task.setSprintId(toSprintId);
+        }
+        taskRepository.saveAll(undone);
+        log.info("Migrated {} tasks from sprint {} to sprint {}", undone.size(), fromSprintId, toSprintId);
+        return undone.size();
+    }
+
+    @Transactional
+    public int compensateMigratedTasks(Long fromSprintId) {
+        // find tasks that were moved OUT of fromSprintId — their originalSprintId == fromSprintId
+        List<Task> migrated = taskRepository.findByOriginalSprintId(fromSprintId);
+        for (Task task : migrated) {
+            task.setSprintId(task.getOriginalSprintId());
+            task.setOriginalSprintId(null);
+        }
+        taskRepository.saveAll(migrated);
+        log.info("Compensated {} tasks back to sprint {}", migrated.size(), fromSprintId);
+        return migrated.size();
     }
 
     public java.math.BigDecimal getRemainingPoints(Long sprintId) {

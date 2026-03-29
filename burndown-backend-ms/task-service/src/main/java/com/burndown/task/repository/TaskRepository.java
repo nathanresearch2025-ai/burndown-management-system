@@ -17,6 +17,10 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     List<Task> findBySprintIdAndStatusNot(Long sprintId, String status);
     Optional<Task> findByTaskKey(String taskKey);
 
+    List<Task> findBySprintIdAndOriginalSprintId(Long sprintId, Long originalSprintId);
+
+    List<Task> findByOriginalSprintId(Long originalSprintId);
+
     @Query("SELECT SUM(t.storyPoints) FROM Task t WHERE t.sprintId = :sprintId AND t.status != 'DONE'")
     java.math.BigDecimal sumRemainingPointsBySprintId(@Param("sprintId") Long sprintId);
 

@@ -37,6 +37,11 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
             "/actuator"
     );
 
+    // Paths that are blocked from external access (internal service-to-service only)
+    private static final List<String> BLOCK_LIST = List.of(
+            "/api/v1/internal"
+    );
+
     public void setPublicKey(PublicKey publicKey) {
         this.publicKey = publicKey;
     }
@@ -49,6 +54,13 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         String path = exchange.getRequest().getURI().getPath();
+
+        // Block internal endpoints from external access
+        if (BLOCK_LIST.stream().anyMatch(path::startsWith)) {
+            ServerHttpResponse response = exchange.getResponse();
+            response.setStatusCode(HttpStatus.FORBIDDEN);
+            return response.setComplete();
+        }
 
         // Skip whitelist
         if (WHITE_LIST.stream().anyMatch(path::startsWith)) {

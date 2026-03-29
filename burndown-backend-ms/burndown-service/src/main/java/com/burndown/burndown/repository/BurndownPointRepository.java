@@ -22,4 +22,6 @@ public interface BurndownPointRepository extends JpaRepository<BurndownPoint, Lo
             @Param("sprintId") Long sprintId,
             @Param("start") LocalDate start,
             @Param("end") LocalDate end);
+
+    void deleteBySprintId(Long sprintId);
 }
