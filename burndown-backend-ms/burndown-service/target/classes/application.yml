@@ -1,0 +1,66 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: burndown-service
+  datasource:
+    url: jdbc:postgresql://159.75.202.106:30432/burndown_db?currentSchema=ms_burndown
+    username: postgres
+    password: root
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+    properties:
+      hibernate:
+        default_schema: ms_burndown
+        format_sql: true
+  data:
+    redis:
+      host: 159.75.202.106
+      port: 30379
+      timeout: 2000ms
+  rabbitmq:
+    host: 159.75.202.106
+    port: 30672
+    username: admin
+    password: admin123
+    virtual-host: /
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 159.75.202.106:30848
+        namespace: ""
+        username: ${NACOS_USERNAME:nacos}
+        password: ${NACOS_PASSWORD:nacos}
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      taskService:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+      projectService:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.burndown.burndown: DEBUG
