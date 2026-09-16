@@ -179,6 +179,11 @@ export default {
       deleteSuccess: '项目删除成功',
       deleteConfirm: '确定要删除该项目吗？',
       viewSprints: '查看Sprint',
+      generateEmbeddings: '生成任务向量',
+      generateEmbeddingsSuccess: '任务向量生成成功，处理了 {{count}} 个任务',
+      generateEmbeddingsFailed: '任务向量生成失败',
+      generateEmbeddingsConfirm: '确定要为该项目的所有任务生成向量嵌入吗？',
+      generatingEmbeddings: '正在生成向量...',
     },
 
     // 冲刺

@@ -1,10 +1,11 @@
 import React, { useState } from 'react'
-import { Button, Table, Space, Typography } from 'antd'
-import { PlusOutlined } from '@ant-design/icons'
-import { useQuery } from '@tanstack/react-query'
+import { Button, Table, Space, Typography, message, Modal } from 'antd'
+import { PlusOutlined, ThunderboltOutlined } from '@ant-design/icons'
+import { useQuery, useMutation } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { projectApi } from '../api/project'
+import { similarityApi } from '../api/similarity'
 import MainLayout from '../components/Layout/MainLayout'
 import PermissionGuard from '../components/PermissionGuard'
 import CreateProjectModal from '../components/Modals/CreateProjectModal'
@@ -15,6 +16,8 @@ const ProjectList: React.FC = () => {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const [createModalVisible, setCreateModalVisible] = useState(false)
+  // 记录当前正在生成向量的项目 ID，用于只给该行显示 loading
+  const [generatingProjectId, setGeneratingProjectId] = useState<number | null>(null)
 
   const { data: projects, isLoading } = useQuery({
     queryKey: ['projects'],
@@ -23,6 +26,37 @@ const ProjectList: React.FC = () => {
       return response.data
     },
   })
+
+  // 批量生成向量的 mutation
+  const generateEmbeddingsMutation = useMutation({
+    mutationFn: async (projectId: number) => {
+      return await similarityApi.batchGenerateEmbeddings(projectId, 100)
+    },
+    onSuccess: (response) => {
+      const count = response.data.processedCount
+      message.success(t('project.generateEmbeddingsSuccess', { count }))
+    },
+    onError: (error: any) => {
+      message.error(t('project.generateEmbeddingsFailed') + ': ' + (error.response?.data?.error || error.message))
+    },
+    onSettled: () => {
+      setGeneratingProjectId(null)
+    },
+  })
+
+  // 处理生成向量按钮点击
+  const handleGenerateEmbeddings = (projectId: number) => {
+    Modal.confirm({
+      title: t('project.generateEmbeddings'),
+      content: t('project.generateEmbeddingsConfirm'),
+      okText: t('common.confirm'),
+      cancelText: t('common.cancel'),
+      onOk: () => {
+        setGeneratingProjectId(projectId)
+        generateEmbeddingsMutation.mutate(projectId)
+      },
+    })
+  }
 
   const columns = [
     { title: t('project.name'), dataIndex: 'name', key: 'name' },
@@ -36,6 +70,15 @@ const ProjectList: React.FC = () => {
         <Space>
           <Button type="link" onClick={() => navigate(`/sprints/${record.id}`)}>
             {t('project.viewSprints')}
+          </Button>
+          <Button
+            type="link"
+            icon={<ThunderboltOutlined />}
+            loading={generatingProjectId === record.id}
+            disabled={generatingProjectId !== null && generatingProjectId !== record.id}
+            onClick={() => handleGenerateEmbeddings(record.id)}
+          >
+            {t('project.generateEmbeddings')}
           </Button>
           <PermissionGuard permission="PROJECT:DELETE">
             <Button type="link" danger>
