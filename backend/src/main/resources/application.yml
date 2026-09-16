@@ -3,9 +3,9 @@ spring:
     name: burndown-management
 
   datasource:
-    url: jdbc:postgresql://159.75.202.106:30432/burndown_db
+    url: jdbc:postgresql://203.195.242.70:5432/burndown_db
     username: postgres
-    password: root
+    password: postgres
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 50
@@ -34,8 +34,8 @@ spring:
 
   data:
     redis:
-      host: 159.75.202.106
-      port: 30379
+      host: localhost
+      port: 6379
       password:
       timeout: 3000ms
       lettuce:
