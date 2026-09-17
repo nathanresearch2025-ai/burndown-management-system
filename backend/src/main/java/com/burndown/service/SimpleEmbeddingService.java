@@ -48,8 +48,18 @@ public class SimpleEmbeddingService {
             // 4. 归一化
             normalize(embedding);
 
-            log.debug("Generated simple embedding with dimension: {}", embedding.length);
-            return new PGvector(embedding);
+
+
+            // ============新增：把向量补齐到1536维============
+            float[] finalEmbedding = new float[1536];
+            // 把原来384维复制进去
+            System.arraycopy(embedding, 0, finalEmbedding, 0, embedding.length);
+            // 剩下下标384~1535默认填充0
+
+            log.debug("Generated simple embedding with dimension: {}", finalEmbedding.length);
+
+
+            return new PGvector(finalEmbedding);
 
         } catch (Exception ex) {
             log.error("Failed to generate simple embedding", ex);
