@@ -3,7 +3,7 @@ spring:
     name: burndown-management
 
   datasource:
-    url: jdbc:postgresql://203.195.242.70:5432/burndown_db
+    url: jdbc:postgresql://localhost:5432/burndown_db
     username: postgres
     password: postgres
     driver-class-name: org.postgresql.Driver
