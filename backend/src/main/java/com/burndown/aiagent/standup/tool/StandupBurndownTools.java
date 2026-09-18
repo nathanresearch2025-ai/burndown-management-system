@@ -70,13 +70,7 @@ public class StandupBurndownTools {
      * - 用户询问剩余工作量
      *
      * @param request 包含 Sprint ID 的请求参数
-     * @return 格式化的燃尽图数据字符串，包含：
-     *         - Sprint 名称
-     *         - 数据日期
-     *         - 计划剩余工时
-     *         - 实际剩余工时
-     *         - 偏差值
-     *         - 任务完成统计
+     * @return 简洁的燃尽图数据字符串，供 AI 生成自然回答
      */
     @Description("获取 Sprint 的燃尽图数据，包括计划剩余和实际剩余工时")
     //@org.springframework.ai.tool.annotation.Tool(name = "getSprintBurndown", description = "获取 Sprint 的燃尽图数据")
@@ -94,38 +88,50 @@ public class StandupBurndownTools {
 
             // 步骤3：检查是否有数据
             if (points.isEmpty()) {
-                return String.format("Sprint %s 暂无燃尽图数据", sprint.getName());
+                return String.format("Sprint[%s]暂无数据", sprint.getName());
             }
 
             // 步骤4：获取最新的数据点
-            // 过滤出不晚于今天的数据点，取最后一个（最新的）
-            // 如果所有数据点都在未来，则取第一个数据点
             BurndownPoint latestPoint = points.stream()
                     .filter(p -> !p.getPointDate().isAfter(LocalDate.now()))
-                    .reduce((first, second) -> second)  // 取最后一个
+                    .reduce((first, second) -> second)
                     .orElse(points.get(points.size() - 1));
 
             // 步骤5：提取关键数据
-            BigDecimal plannedRemaining = latestPoint.getIdealRemaining();  // 计划剩余工时
-            BigDecimal actualRemaining = latestPoint.getActualRemaining();  // 实际剩余工时
-            BigDecimal deviation = actualRemaining.subtract(plannedRemaining);  // 偏差
+            BigDecimal plannedRemaining = latestPoint.getIdealRemaining();
+            BigDecimal actualRemaining = latestPoint.getActualRemaining();
+            BigDecimal deviation = actualRemaining.subtract(plannedRemaining);
 
-            // 步骤6：构建格式化的返回结果
-            StringBuilder result = new StringBuilder();
-            result.append(String.format("Sprint: %s\n", sprint.getName()));
-            result.append(String.format("日期: %s\n", latestPoint.getPointDate()));
-            result.append(String.format("计划剩余工时: %.1f 小时\n", plannedRemaining));
-            result.append(String.format("实际剩余工时: %.1f 小时\n", actualRemaining));
-            result.append(String.format("偏差: %.1f 小时\n", deviation));
-            result.append(String.format("已完成任务: %d/%d\n",
-                    latestPoint.getCompletedTasks(), latestPoint.getTotalTasks()));
-            result.append(String.format("进行中任务: %d\n", latestPoint.getInProgressTasks()));
-
-            return result.toString();
+            // 步骤6：构建简洁的数据格式
+            return String.format("Sprint[%s]截至%s:计划剩余%.1f小时,实际剩余%.1f小时,偏差%.1f小时;已完成%d/%d个任务,进行中%d个",
+                    sprint.getName(),
+                    formatDate(latestPoint.getPointDate()),
+                    plannedRemaining,
+                    actualRemaining,
+                    deviation,
+                    latestPoint.getCompletedTasks(),
+                    latestPoint.getTotalTasks(),
+                    latestPoint.getInProgressTasks());
 
         } catch (Exception e) {
             log.error("Error getting sprint burndown: {}", e.getMessage(), e);
             return "获取燃尽图数据失败: " + e.getMessage();
+        }
+    }
+
+    /**
+     * 格式化日期为简洁格式
+     */
+    private String formatDate(LocalDate date) {
+        if (date == null) return "未知";
+
+        LocalDate today = LocalDate.now();
+        if (date.equals(today)) {
+            return "今天";
+        } else if (date.equals(today.minusDays(1))) {
+            return "昨天";
+        } else {
+            return date.format(java.time.format.DateTimeFormatter.ofPattern("MM月dd日"));
         }
     }
 

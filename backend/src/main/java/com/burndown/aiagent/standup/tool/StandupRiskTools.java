@@ -70,11 +70,7 @@ public class StandupRiskTools {
      * - AI 在分析燃尽图后自动调用
      *
      * @param request 包含计划剩余工时和实际剩余工时的请求参数
-     * @return 格式化的风险评估结果字符串，包含：
-     *         - 风险等级（LOW/MEDIUM/HIGH）
-     *         - 偏差比例（百分比）
-     *         - 偏差工时（小时）
-     *         - 改进建议
+     * @return 简洁的风险评估结果字符串，供 AI 生成自然回答
      */
     @Description("评估燃尽图偏离风险，返回风险等级和建议")
     public String evaluateBurndownRisk(EvaluateBurndownRiskRequest request) {
@@ -87,13 +83,11 @@ public class StandupRiskTools {
 
             // 步骤1：检查计划剩余工时是否为 0
             if (planned.compareTo(BigDecimal.ZERO) == 0) {
-                return "计划剩余工时为 0，无法评估风险";
+                return "计划剩余0小时,无法评估";
             }
 
             // 步骤2：计算偏差和偏差比例
-            // 偏差 = 实际剩余 - 计划剩余
             BigDecimal deviation = actual.subtract(planned);
-            // 偏差比例 = 偏差 / 计划剩余（保留4位小数）
             BigDecimal ratio = deviation.divide(planned, 4, RoundingMode.HALF_UP);
 
             // 步骤3：根据偏差比例判定风险等级和建议
@@ -101,27 +95,22 @@ public class StandupRiskTools {
             String suggestion;
 
             if (ratio.compareTo(new BigDecimal("0.05")) <= 0) {
-                // 偏差比例 ≤ 5%：低风险
-                riskLevel = "LOW";
-                suggestion = "进度良好，继续保持当前节奏";
+                riskLevel = "低";
+                suggestion = "进度良好,保持节奏";
             } else if (ratio.compareTo(new BigDecimal("0.20")) <= 0) {
-                // 5% < 偏差比例 ≤ 20%：中等风险
-                riskLevel = "MEDIUM";
-                suggestion = "存在中等延期风险，建议优先推进高优任务并减少并行工作";
+                riskLevel = "中";
+                suggestion = "有延期风险,优先推进高优任务";
             } else {
-                // 偏差比例 > 20%：高风险
-                riskLevel = "HIGH";
-                suggestion = "存在高延期风险，建议立即召开团队会议，重新评估任务优先级和资源分配";
+                riskLevel = "高";
+                suggestion = "延期风险严重,需召开团队会议重新评估";
             }
 
-            // 步骤4：构建格式化的返回结果
-            StringBuilder result = new StringBuilder();
-            result.append(String.format("风险等级: %s\n", riskLevel));
-            result.append(String.format("偏差比例: %.1f%%\n", ratio.multiply(new BigDecimal("100"))));
-            result.append(String.format("偏差工时: %.1f 小时\n", deviation));
-            result.append(String.format("建议: %s\n", suggestion));
-
-            return result.toString();
+            // 步骤4：构建简洁的数据格式
+            return String.format("风险等级[%s],偏差%.1f%%(%.1f小时),建议:%s",
+                    riskLevel,
+                    ratio.multiply(new BigDecimal("100")),
+                    deviation,
+                    suggestion);
 
         } catch (Exception e) {
             log.error("Error evaluating burndown risk: {}", e.getMessage(), e);

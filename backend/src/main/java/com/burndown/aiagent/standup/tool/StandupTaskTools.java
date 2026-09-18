@@ -48,7 +48,7 @@ public class StandupTaskTools {
      * - 用户询问"我负责的任务"
      *
      * @param request 包含项目ID和用户ID的请求参数
-     * @return 格式化的任务列表字符串，供 AI 理解和生成回答
+     * @return 简洁的任务数据字符串，供 AI 理解和生成自然回答
      */
     @Description("获取用户当前进行中的任务列表")
     public String getInProgressTasks(GetInProgressTasksRequest request) {
@@ -63,29 +63,64 @@ public class StandupTaskTools {
                     Task.TaskStatus.IN_PROGRESS
             );
 
-            // 如果没有任务，返回友好提示
+            // 如果没有任务，返回简洁提示
             if (tasks.isEmpty()) {
-                return "当前没有进行中的任务";
+                return "0个进行中的任务";
             }
 
-            // 构建格式化的任务列表字符串
+            // 构建简洁的数据格式，让 AI 自己组织语言
             StringBuilder result = new StringBuilder();
-            result.append(String.format("找到 %d 个进行中的任务：\n", tasks.size()));
+            result.append(String.format("共%d个任务：", tasks.size()));
 
-            for (Task task : tasks) {
-                result.append(String.format("- %s: %s (优先级: %s, 故事点: %s, 更新时间: %s)\n",
-                        task.getTaskKey(),      // 任务编号，如 TASK-123
-                        task.getTitle(),        // 任务标题
-                        task.getPriority(),     // 优先级：HIGH/MEDIUM/LOW
-                        task.getStoryPoints(),  // 故事点数
-                        task.getUpdatedAt()));  // 最后更新时间
+            for (int i = 0; i < tasks.size(); i++) {
+                Task task = tasks.get(i);
+                if (i > 0) {
+                    result.append("；");
+                }
+                result.append(String.format("%s(%s优先级,%.1f故事点,更新于%s)",
+                        task.getTitle(),
+                        translatePriority(task.getPriority()),
+                        task.getStoryPoints() != null ? task.getStoryPoints() : 0.0,
+                        formatDateTime(task.getUpdatedAt())));
             }
 
             return result.toString();
 
         } catch (Exception e) {
-            log.error("Error getting in-progress tasks: {}", e.getMessage(), e);
+            log.error("Error getting in-progress tasks: ", e.getMessage(), e);
             return "获取任务失败: " + e.getMessage();
+        }
+    }
+
+    /**
+     * 翻译优先级为中文
+     */
+    private String translatePriority(Task.TaskPriority priority) {
+        if (priority == null) return "普通";
+        return switch (priority) {
+            case HIGH -> "高";
+            case MEDIUM -> "中";
+            case LOW -> "低";
+        };
+    }
+
+    /**
+     * 格式化日期时间为简洁格式
+     */
+    private String formatDateTime(java.time.LocalDateTime dateTime) {
+        if (dateTime == null) return "未知";
+
+        java.time.LocalDate today = java.time.LocalDate.now();
+        java.time.LocalDate taskDate = dateTime.toLocalDate();
+
+        if (taskDate.equals(today)) {
+            return "今天" + dateTime.format(java.time.format.DateTimeFormatter.ofPattern("HH:mm"));
+        } else if (taskDate.equals(today.minusDays(1))) {
+            return "昨天";
+        } else if (taskDate.isAfter(today.minusDays(7))) {
+            return taskDate.format(java.time.format.DateTimeFormatter.ofPattern("MM-dd"));
+        } else {
+            return taskDate.format(java.time.format.DateTimeFormatter.ofPattern("MM-dd"));
         }
     }
 
