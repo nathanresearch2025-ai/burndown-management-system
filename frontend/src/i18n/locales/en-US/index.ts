@@ -179,6 +179,11 @@ export default {
       deleteSuccess: 'Project deleted successfully',
       deleteConfirm: 'Are you sure you want to delete this project?',
       viewSprints: 'View Sprints',
+      generateEmbeddings: 'Generate Vectors',
+      generateEmbeddingsSuccess: 'Task vectors generated successfully, processed {{count}} tasks',
+      generateEmbeddingsFailed: 'Failed to generate task vectors',
+      generateEmbeddingsConfirm: 'Are you sure you want to generate vector embeddings for all tasks in this project?',
+      generatingEmbeddings: 'Generating vectors...',
     },
 
     // Sprint

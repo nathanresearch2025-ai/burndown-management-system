@@ -3,6 +3,7 @@ package com.burndown.service;
 import com.burndown.exception.BusinessException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -17,6 +18,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Service
 public class AiClientService {
 
@@ -41,9 +43,15 @@ public class AiClientService {
     public AiClientService(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
         this.httpClient = HttpClient.newBuilder().build();
+        log.info("=== AiClientService initialized ===");
     }
 
     public String generateTaskDescription(String prompt) {
+        log.info("=== generateTaskDescription called ===");
+        log.info("AI Enabled: {}", aiEnabled);
+        log.info("AI Base URL: {}", aiBaseUrl);
+        log.info("AI Model: {}", aiChatModel);
+
         if (!aiEnabled) {
             throw new BusinessException("AI_DISABLED", "task.ai.disabled", HttpStatus.BAD_REQUEST);
         }
@@ -61,8 +69,11 @@ public class AiClientService {
         );
 
         try {
+            String chatUrl = aiBaseUrl + "/chat/completions";
+            log.info("Calling DeepSeek API: {}", chatUrl);
+
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(aiBaseUrl))
+                    .uri(URI.create(chatUrl))
                     .timeout(aiTimeout)
                     .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
                     .header("Authorization", "Bearer " + aiApiKey)
@@ -70,7 +81,11 @@ public class AiClientService {
                     .build();
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+            log.info("DeepSeek API response status: {}", response.statusCode());
+
             if (response.statusCode() >= 400) {
+                log.error("DeepSeek API error: {}", response.body());
                 throw new BusinessException("AI_SERVICE_ERROR", "task.ai.serviceUnavailable", HttpStatus.BAD_GATEWAY);
             }
 

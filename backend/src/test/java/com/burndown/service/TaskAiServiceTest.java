@@ -74,6 +74,7 @@ class TaskAiServiceTest {
                 projectRepository,
                 aiTaskGenerationLogRepository,
                 aiClientService,
+                null, // EmbeddingService - not needed for tests
                 objectMapper,
                 requestCounter,
                 successCounter,

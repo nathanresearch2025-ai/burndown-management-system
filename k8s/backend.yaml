@@ -15,7 +15,7 @@ spec:
       hostNetwork: true
       containers:
       - name: burndown-backend
-        image: burndown-backend:latest
+        image: docker.io/library/burndown-backend:latest
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080

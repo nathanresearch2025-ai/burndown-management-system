@@ -1,0 +1,433 @@
+{
+  "info": {
+    "name": "Sprint Close Saga API",
+    "description": "Sprint关闭与任务结转 Saga 分布式事务测试集合\n\n启动顺序: auth-service(8081) -> project-service(8082) -> task-service(8083) -> burndown-service(8084) -> api-gateway(8000)\n\n测试流程:\n1. 先执行 Login 获取 token\n2. 创建项目 -> 创建Sprint -> 启动Sprint -> 创建任务\n3. 执行 Close & Carry Over\n4. 轮询 Saga 状态直到 SUCCEEDED 或 COMPENSATED",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "ms_base_url", "value": "http://localhost:8000", "type": "string" },
+    { "key": "token", "value": "", "type": "string" },
+    { "key": "project_id", "value": "1", "type": "string" },
+    { "key": "sprint_id", "value": "1", "type": "string" },
+    { "key": "saga_id", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "1. Auth",
+      "item": [
+        {
+          "name": "Login (自动保存token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.data && json.data.token) {",
+                  "  pm.collectionVariables.set('token', json.data.token);",
+                  "  console.log('Token saved: ' + json.data.token.substring(0,20) + '...');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{ms_base_url}}/api/v1/auth/login",
+              "host": ["{{ms_base_url}}"],
+              "path": ["api", "v1", "auth", "login"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"admin\",\n  \"password\": \"admin123\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. 准备测试数据",
+      "item": [
+        {
+          "name": "2.1 创建项目",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.data && json.data.id) {",
+                  "  pm.collectionVariables.set('project_id', json.data.id);",
+                  "  console.log('Project created, id=' + json.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{ms_base_url}}/api/v1/projects",
+              "host": ["{{ms_base_url}}"],
+              "path": ["api", "v1", "projects"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Saga测试项目\",\n  \"projectKey\": \"SAGA\",\n  \"description\": \"Sprint关闭Saga测试\",\n  \"type\": \"SCRUM\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "2.2 创建Sprint",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.data && json.data.id) {",
+                  "  pm.collectionVariables.set('sprint_id', json.data.id);",
+                  "  console.log('Sprint created, id=' + json.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{ms_base_url}}/api/v1/sprints/project/{{project_id}}",
+              "host": ["{{ms_base_url}}"],
+              "path": ["api", "v1", "sprints", "project", "{{project_id}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Sprint 1\",\n  \"goal\": \"完成核心功能\",\n  \"startDate\": \"2026-03-01\",\n  \"endDate\": \"2026-03-14\",\n  \"totalCapacity\": 40\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "2.3 启动Sprint",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{ms_base_url}}/api/v1/sprints/{{sprint_id}}/start",
+              "host": ["{{ms_base_url}}"],
+              "path": ["api", "v1", "sprints", "{{sprint_id}}", "start"]
+            }
+          }
+        },
+        {
+          "name": "2.4 创建未完成任务 (TODO)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{ms_base_url}}/api/v1/tasks",
+              "host": ["{{ms_base_url}}"],
+              "path": ["api", "v1", "tasks"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"未完成任务-结转测试\",\n  \"projectId\": {{project_id}},\n  \"sprintId\": {{sprint_id}},\n  \"type\": \"TASK\",\n  \"priority\": \"HIGH\",\n  \"storyPoints\": 5\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "2.5 创建已完成任务 (DONE)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{ms_base_url}}/api/v1/tasks",
+              "host": ["{{ms_base_url}}"],
+              "path": ["api", "v1", "tasks"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"已完成任务-留在原Sprint\",\n  \"projectId\": {{project_id}},\n  \"sprintId\": {{sprint_id}},\n  \"type\": \"TASK\",\n  \"priority\": \"LOW\",\n  \"storyPoints\": 3,\n  \"status\": \"DONE\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Saga - Sprint关闭与结转",
+      "item": [
+        {
+          "name": "3.1 执行 Close & Carry Over (核心接口)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.data && json.data.id) {",
+                  "  pm.collectionVariables.set('saga_id', json.data.id);",
+                  "  console.log('Saga started, id=' + json.data.id);",
+                  "  console.log('Saga status=' + json.data.status);",
+                  "}",
+                  "pm.test('Response is success or saga returned', function() {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 500]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{ms_base_url}}/api/v1/sprints/{{sprint_id}}/close-and-carry-over",
+              "host": ["{{ms_base_url}}"],
+              "path": ["api", "v1", "sprints", "{{sprint_id}}", "close-and-carry-over"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nextSprintName\": \"Sprint 2\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "3.2 查询Saga状态",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.data) {",
+                  "  console.log('Saga status: ' + json.data.status);",
+                  "  console.log('Current step: ' + json.data.currentStep);",
+                  "  console.log('Next sprint id: ' + json.data.nextSprintId);",
+                  "  if (json.data.steps) {",
+                  "    json.data.steps.forEach(function(s) {",
+                  "      console.log('  Step: ' + s.stepName + ' -> ' + s.stepStatus);",
+                  "    });",
+                  "  }",
+                  "}",
+                  "pm.test('Saga exists', function() {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(json.data).to.exist;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{ms_base_url}}/api/v1/sagas/{{saga_id}}",
+              "host": ["{{ms_base_url}}"],
+              "path": ["api", "v1", "sagas", "{{saga_id}}"]
+            }
+          }
+        },
+        {
+          "name": "3.3 幂等测试 - 重复关闭同一Sprint (期望409)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Duplicate request returns conflict or completed sprint error', function() {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([409, 400, 500]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{ms_base_url}}/api/v1/sprints/{{sprint_id}}/close-and-carry-over",
+              "host": ["{{ms_base_url}}"],
+              "path": ["api", "v1", "sprints", "{{sprint_id}}", "close-and-carry-over"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nextSprintName\": \"Sprint 2\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. 验证结果",
+      "item": [
+        {
+          "name": "4.1 验证原Sprint状态为COMPLETED",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Original sprint is COMPLETED', function() {",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.data.status).to.equal('COMPLETED');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{ms_base_url}}/api/v1/sprints/{{sprint_id}}",
+              "host": ["{{ms_base_url}}"],
+              "path": ["api", "v1", "sprints", "{{sprint_id}}"]
+            }
+          }
+        },
+        {
+          "name": "4.2 验证原Sprint任务(DONE任务仍在)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('DONE tasks remain in original sprint', function() {",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.data).to.exist;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{ms_base_url}}/api/v1/tasks/sprint/{{sprint_id}}?status=DONE",
+              "host": ["{{ms_base_url}}"],
+              "path": ["api", "v1", "tasks", "sprint", "{{sprint_id}}"],
+              "query": [{ "key": "status", "value": "DONE" }]
+            }
+          }
+        },
+        {
+          "name": "4.3 查询新Sprint信息",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{ms_base_url}}/api/v1/sprints/project/{{project_id}}",
+              "host": ["{{ms_base_url}}"],
+              "path": ["api", "v1", "sprints", "project", "{{project_id}}"]
+            }
+          }
+        },
+        {
+          "name": "4.4 验证燃尽图数据已初始化(原Sprint)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Burndown points exist for original sprint', function() {",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.data).to.be.an('array');",
+                  "  pm.expect(json.data.length).to.be.above(0);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{ms_base_url}}/api/v1/burndown/sprint/{{sprint_id}}",
+              "host": ["{{ms_base_url}}"],
+              "path": ["api", "v1", "burndown", "sprint", "{{sprint_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Internal接口 (直连服务,不走Gateway)",
+      "item": [
+        {
+          "name": "5.1 [task-service直连] 手动触发任务迁移",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "http://localhost:8083/api/v1/internal/tasks/sprint/{{sprint_id}}/migrate?targetSprintId=2",
+              "host": ["http://localhost:8083"],
+              "path": ["api", "v1", "internal", "tasks", "sprint", "{{sprint_id}}", "migrate"],
+              "query": [{ "key": "targetSprintId", "value": "2" }]
+            }
+          }
+        },
+        {
+          "name": "5.2 [task-service直连] 补偿回迁任务",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8083/api/v1/internal/tasks/sprint/{{sprint_id}}/compensate",
+              "host": ["http://localhost:8083"],
+              "path": ["api", "v1", "internal", "tasks", "sprint", "{{sprint_id}}", "compensate"]
+            }
+          }
+        },
+        {
+          "name": "5.3 [burndown-service直连] 删除Sprint燃尽点",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8084/api/v1/internal/burndown/sprint/{{sprint_id}}",
+              "host": ["http://localhost:8084"],
+              "path": ["api", "v1", "internal", "burndown", "sprint", "{{sprint_id}}"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

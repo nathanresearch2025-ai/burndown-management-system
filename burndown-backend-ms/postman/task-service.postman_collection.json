@@ -1,0 +1,278 @@
+{
+  "info": {
+    "name": "Task Service API",
+    "description": "Burndown MS - Task & WorkLog endpoints via API Gateway (port 8000).\n启动顺序: 1.auth-service(8081) -> 2.task-service(8083) -> 3.api-gateway(8000)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "ms_base_url", "value": "http://localhost:8000", "type": "string" },
+    { "key": "token", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "1. Auth",
+      "item": [
+        {
+          "name": "Login (自动保存token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.data && json.data.token) {",
+                  "  pm.collectionVariables.set('token', json.data.token);",
+                  "  console.log('Token saved.');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{ms_base_url}}/api/v1/auth/login",
+              "host": ["{{ms_base_url}}"],
+              "path": ["api", "v1", "auth", "login"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"admin\",\n  \"password\": \"admin123\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Tasks - CRUD",
+      "item": [
+        {
+          "name": "Get Task by ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{ms_base_url}}/api/v1/tasks/1",
+              "host": ["{{ms_base_url}}"],
+              "path": ["api", "v1", "tasks", "1"]
+            }
+          }
+        },
+        {
+          "name": "Get Tasks by Sprint",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{ms_base_url}}/api/v1/tasks/sprint/1?page=0&size=20",
+              "host": ["{{ms_base_url}}"],
+              "path": ["api", "v1", "tasks", "sprint", "1"],
+              "query": [
+                { "key": "status", "value": "", "disabled": true, "description": "TODO | IN_PROGRESS | IN_REVIEW | DONE" },
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Tasks by Project",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{ms_base_url}}/api/v1/tasks/project/1?page=0&size=20",
+              "host": ["{{ms_base_url}}"],
+              "path": ["api", "v1", "tasks", "project", "1"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Task",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{ms_base_url}}/api/v1/tasks",
+              "host": ["{{ms_base_url}}"],
+              "path": ["api", "v1", "tasks"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"实现用户登录功能\",\n  \"description\": \"完成前后端登录接口对接\",\n  \"status\": \"TODO\",\n  \"priority\": \"HIGH\",\n  \"type\": \"FEATURE\",\n  \"storyPoints\": 5,\n  \"sprintId\": 1,\n  \"projectId\": 1\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "Update Task",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{ms_base_url}}/api/v1/tasks/1",
+              "host": ["{{ms_base_url}}"],
+              "path": ["api", "v1", "tasks", "1"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"实现用户登录功能(更新)\",\n  \"description\": \"完成前后端登录接口对接，增加记住密码功能\",\n  \"priority\": \"HIGH\",\n  \"storyPoints\": 8\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "Update Task Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{ms_base_url}}/api/v1/tasks/1/status",
+              "host": ["{{ms_base_url}}"],
+              "path": ["api", "v1", "tasks", "1", "status"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"IN_PROGRESS\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "Delete Task",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{ms_base_url}}/api/v1/tasks/1",
+              "host": ["{{ms_base_url}}"],
+              "path": ["api", "v1", "tasks", "1"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Tasks - Stats",
+      "item": [
+        {
+          "name": "Get Remaining Points by Sprint",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{ms_base_url}}/api/v1/tasks/sprint/1/remaining-points",
+              "host": ["{{ms_base_url}}"],
+              "path": ["api", "v1", "tasks", "sprint", "1", "remaining-points"]
+            }
+          }
+        },
+        {
+          "name": "Get Completed Points by Sprint",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{ms_base_url}}/api/v1/tasks/sprint/1/completed-points",
+              "host": ["{{ms_base_url}}"],
+              "path": ["api", "v1", "tasks", "sprint", "1", "completed-points"]
+            }
+          }
+        },
+        {
+          "name": "Get Total Points by Sprint",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{ms_base_url}}/api/v1/tasks/sprint/1/total-points",
+              "host": ["{{ms_base_url}}"],
+              "path": ["api", "v1", "tasks", "sprint", "1", "total-points"]
+            }
+          }
+        },
+        {
+          "name": "Get Status Counts by Sprint",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{ms_base_url}}/api/v1/tasks/sprint/1/status-counts",
+              "host": ["{{ms_base_url}}"],
+              "path": ["api", "v1", "tasks", "sprint", "1", "status-counts"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. WorkLogs",
+      "item": [
+        {
+          "name": "Get WorkLogs by Task",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{ms_base_url}}/api/v1/worklogs/task/1?page=0&size=20",
+              "host": ["{{ms_base_url}}"],
+              "path": ["api", "v1", "worklogs", "task", "1"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create WorkLog",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{ms_base_url}}/api/v1/worklogs/task/1",
+              "host": ["{{ms_base_url}}"],
+              "path": ["api", "v1", "worklogs", "task", "1"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"hoursSpent\": 2.5,\n  \"description\": \"完成登录接口开发\",\n  \"logDate\": \"2026-03-25\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "Delete WorkLog",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{ms_base_url}}/api/v1/worklogs/1",
+              "host": ["{{ms_base_url}}"],
+              "path": ["api", "v1", "worklogs", "1"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

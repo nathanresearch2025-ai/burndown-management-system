@@ -1,0 +1,107 @@
+{
+  "info": {
+    "name": "Burndown Management System - Sprint Prediction API",
+    "description": "测试 Sprint 完成概率预测接口的 Postman 集合",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "sprintId",
+      "value": "1",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. 用户登录 (获取 Token)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// 自动保存 token 到集合变量",
+              "if (pm.response.code === 200) {",
+              "    var jsonData = pm.response.json();",
+              "    if (jsonData.token) {",
+              "        pm.collectionVariables.set('token', jsonData.token);",
+              "        console.log('Token saved:', jsonData.token);",
+              "    }",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "login"]
+        },
+        "description": "登录获取 JWT Token，token 会自动保存到集合变量中"
+      },
+      "response": []
+    },
+    {
+      "name": "2. 获取 Sprint 完成概率预测",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/sprints/{{sprintId}}/completion-probability",
+          "host": ["{{baseUrl}}"],
+          "path": ["sprints", "{{sprintId}}", "completion-probability"]
+        },
+        "description": "预测指定 Sprint 的完成概率和风险等级\n\n**权限要求**: SPRINT:VIEW\n\n**返回字段**:\n- probability: 完成概率 (0-1)\n- riskLevel: 风险等级 (LOW/MEDIUM/HIGH)\n- features: 特征摘要信息"
+      },
+      "response": []
+    },
+    {
+      "name": "3. 获取 Sprint 完成概率预测 (Sprint ID=2)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/sprints/2/completion-probability",
+          "host": ["{{baseUrl}}"],
+          "path": ["sprints", "2", "completion-probability"]
+        },
+        "description": "测试不同的 Sprint ID"
+      },
+      "response": []
+    }
+  ]
+}

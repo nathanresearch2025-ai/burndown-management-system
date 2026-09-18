@@ -2,7 +2,13 @@
 -- Burndown Management System - Complete Database Initialization
 -- =============================================
 
+-- Enable pgvector extension for vector similarity search
+CREATE EXTENSION IF NOT EXISTS vector;
+
 -- Drop existing tables if they exist (in reverse order of dependencies)
+DROP TABLE IF EXISTS agent_tool_call_log CASCADE;
+DROP TABLE IF EXISTS agent_chat_message CASCADE;
+DROP TABLE IF EXISTS agent_chat_session CASCADE;
 DROP TABLE IF EXISTS role_permissions CASCADE;
 DROP TABLE IF EXISTS user_roles CASCADE;
 DROP TABLE IF EXISTS permissions CASCADE;
@@ -107,6 +113,7 @@ CREATE TABLE tasks (
                        reporter_id BIGINT NOT NULL,
                        labels TEXT[],
                        custom_fields JSONB DEFAULT '{}'::jsonb,
+                       embedding vector(1536),
                        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                        resolved_at TIMESTAMP,
@@ -123,6 +130,7 @@ CREATE INDEX idx_tasks_sprint_id ON tasks(sprint_id);
 CREATE INDEX idx_tasks_assignee_id ON tasks(assignee_id);
 CREATE INDEX idx_tasks_status ON tasks(status);
 CREATE INDEX idx_tasks_task_key ON tasks(task_key);
+CREATE INDEX idx_tasks_embedding ON tasks USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
 
 -- Work logs table
 CREATE TABLE work_logs (
@@ -413,9 +421,9 @@ INSERT INTO projects (name, description, project_key, type, visibility, owner_id
 
 -- Insert sample sprints
 INSERT INTO sprints (project_id, name, goal, start_date, end_date, status, created_at, updated_at) VALUES
-                                                                                                       ((SELECT id FROM projects WHERE name = '电商平台重构'), 'Sprint 1 - 用户服务', '完成用户服务的微服务拆分和基础功能开发', '2024-01-01', '2024-01-14', 'COMPLETED', NOW(), NOW()),
-                                                                                                       ((SELECT id FROM projects WHERE name = '电商平台重构'), 'Sprint 2 - 订单服务', '完成订单服务的开发和与用户服务的集成', '2024-01-15', '2024-01-28', 'ACTIVE', NOW(), NOW()),
-                                                                                                       ((SELECT id FROM projects WHERE name = '移动端App开发'), 'Sprint 1 - 基础框架', '搭建移动端基础框架和通用组件', '2024-02-01', '2024-02-14', 'ACTIVE', NOW(), NOW());
+                                                                                                       ((SELECT id FROM projects WHERE name = '电商平台重构'), 'Sprint 1 - 用户服务', '完成用户服务的微服务拆分和基础功能开发', '2026-02-16', '2026-02-28', 'COMPLETED', NOW(), NOW()),
+                                                                                                       ((SELECT id FROM projects WHERE name = '电商平台重构'), 'Sprint 2 - 订单服务', '完成订单服务的开发和与用户服务的集成', '2026-03-09', '2026-03-28', 'ACTIVE', NOW(), NOW()),
+                                                                                                       ((SELECT id FROM projects WHERE name = '移动端App开发'), 'Sprint 1 - 基础框架', '搭建移动端基础框架和通用组件', '2026-03-02', '2026-03-21', 'ACTIVE', NOW(), NOW());
 
 -- Insert sample tasks for Sprint 1 (电商平台重构)
 INSERT INTO tasks (project_id, sprint_id, task_key, title, description, type, assignee_id, reporter_id, status, priority, story_points, original_estimate, time_spent, created_at, updated_at) VALUES
@@ -429,7 +437,12 @@ INSERT INTO tasks (project_id, sprint_id, task_key, title, description, type, as
 ((SELECT id FROM projects WHERE name = '电商平台重构'), (SELECT id FROM sprints WHERE name = 'Sprint 2 - 订单服务'), 'TASK-5', '订单创建功能', '实现订单创建接口，包括库存检查和价格计算', 'TASK', (SELECT id FROM users WHERE username = 'dev_li'), (SELECT id FROM users WHERE username = 'pm_zhang'), 'IN_PROGRESS', 'HIGH', 8.0, 12.0, 6.0, NOW(), NOW()),
 ((SELECT id FROM projects WHERE name = '电商平台重构'), (SELECT id FROM sprints WHERE name = 'Sprint 2 - 订单服务'), 'TASK-6', '订单查询功能', '实现订单列表和详情查询接口', 'TASK', (SELECT id FROM users WHERE username = 'dev_wang'), (SELECT id FROM users WHERE username = 'pm_zhang'), 'IN_PROGRESS', 'MEDIUM', 5.0, 8.0, 3.0, NOW(), NOW()),
 ((SELECT id FROM projects WHERE name = '电商平台重构'), (SELECT id FROM sprints WHERE name = 'Sprint 2 - 订单服务'), 'TASK-7', '订单状态管理', '实现订单状态流转和更新功能', 'TASK', (SELECT id FROM users WHERE username = 'dev_wang'), (SELECT id FROM users WHERE username = 'pm_zhang'), 'TODO', 'HIGH', 5.0, 8.0, 0.0, NOW(), NOW()),
-((SELECT id FROM projects WHERE name = '电商平台重构'), (SELECT id FROM sprints WHERE name = 'Sprint 2 - 订单服务'), 'TASK-8', '集成测试', '编写订单服务与用户服务的集成测试', 'TASK', (SELECT id FROM users WHERE username = 'tester_zhao'), (SELECT id FROM users WHERE username = 'pm_zhang'), 'TODO', 'MEDIUM', 5.0, 10.0, 0.0, NOW(), NOW());
+((SELECT id FROM projects WHERE name = '电商平台重构'), (SELECT id FROM sprints WHERE name = 'Sprint 2 - 订单服务'), 'TASK-8', '集成测试', '编写订单服务与用户服务的集成测试', 'TASK', (SELECT id FROM users WHERE username = 'tester_zhao'), (SELECT id FROM users WHERE username = 'pm_zhang'), 'TODO', 'MEDIUM', 5.0, 10.0, 0.0, NOW(), NOW()),
+((SELECT id FROM projects WHERE name = '电商平台重构'), (SELECT id FROM sprints WHERE name = 'Sprint 2 - 订单服务'), 'TASK-12', '订单支付接口对接', '对接第三方支付平台，实现支付宝和微信支付', 'TASK', (SELECT id FROM users WHERE username = 'admin'), (SELECT id FROM users WHERE username = 'pm_zhang'), 'IN_PROGRESS', 'HIGH', 8.0, 16.0, 4.0, NOW(), NOW()),
+((SELECT id FROM projects WHERE name = '电商平台重构'), (SELECT id FROM sprints WHERE name = 'Sprint 2 - 订单服务'), 'TASK-13', '购物车服务', '实现购物车增删改查和结算逻辑', 'TASK', (SELECT id FROM users WHERE username = 'dev_li'), (SELECT id FROM users WHERE username = 'pm_zhang'), 'IN_PROGRESS', 'HIGH', 5.0, 10.0, 2.0, NOW(), NOW()),
+((SELECT id FROM projects WHERE name = '电商平台重构'), (SELECT id FROM sprints WHERE name = 'Sprint 2 - 订单服务'), 'TASK-14', '库存扣减接口', '实现下单时库存原子性扣减和回滚机制', 'TASK', (SELECT id FROM users WHERE username = 'dev_wang'), (SELECT id FROM users WHERE username = 'pm_zhang'), 'IN_PROGRESS', 'MEDIUM', 5.0, 8.0, 1.0, NOW(), NOW()),
+((SELECT id FROM projects WHERE name = '电商平台重构'), (SELECT id FROM sprints WHERE name = 'Sprint 2 - 订单服务'), 'TASK-15', '订单超时自动取消', '实现订单未支付超时自动取消的定时任务', 'TASK', (SELECT id FROM users WHERE username = 'admin'), (SELECT id FROM users WHERE username = 'pm_zhang'), 'TODO', 'MEDIUM', 3.0, 6.0, 0.0, NOW(), NOW()),
+((SELECT id FROM projects WHERE name = '电商平台重构'), (SELECT id FROM sprints WHERE name = 'Sprint 2 - 订单服务'), 'TASK-16', '性能压测与优化', '对订单服务进行压测，优化慢查询和接口响应时间', 'TASK', (SELECT id FROM users WHERE username = 'tester_zhao'), (SELECT id FROM users WHERE username = 'pm_zhang'), 'TODO', 'LOW', 3.0, 8.0, 0.0, NOW(), NOW());
 
 -- Insert sample tasks for Sprint 1 (移动端App开发)
 INSERT INTO tasks (project_id, sprint_id, task_key, title, description, type, assignee_id, reporter_id, status, priority, story_points, original_estimate, time_spent, created_at, updated_at) VALUES
@@ -451,34 +464,106 @@ INSERT INTO work_logs (task_id, user_id, work_date, time_spent, remaining_estima
 ((SELECT id FROM tasks WHERE task_key = 'TASK-5'), (SELECT id FROM users WHERE username = 'dev_li'), '2024-01-16', 3.0, 9.0, '设计订单数据模型和接口', NOW()),
 ((SELECT id FROM tasks WHERE task_key = 'TASK-5'), (SELECT id FROM users WHERE username = 'dev_li'), '2024-01-17', 3.0, 6.0, '实现订单创建逻辑', NOW()),
 ((SELECT id FROM tasks WHERE task_key = 'TASK-6'), (SELECT id FROM users WHERE username = 'dev_wang'), '2024-01-18', 3.0, 5.0, '实现订单列表查询接口', NOW()),
+-- Sprint 2 additional work logs
+((SELECT id FROM tasks WHERE task_key = 'TASK-12'), (SELECT id FROM users WHERE username = 'admin'), '2026-03-16', 2.0, 14.0, '调研支付宝和微信支付SDK文档', NOW()),
+((SELECT id FROM tasks WHERE task_key = 'TASK-12'), (SELECT id FROM users WHERE username = 'admin'), '2026-03-20', 2.0, 12.0, '完成支付宝沙箱环境联调', NOW()),
+((SELECT id FROM tasks WHERE task_key = 'TASK-13'), (SELECT id FROM users WHERE username = 'dev_li'), '2026-03-17', 2.0, 8.0, '设计购物车数据结构', NOW()),
+((SELECT id FROM tasks WHERE task_key = 'TASK-14'), (SELECT id FROM users WHERE username = 'dev_wang'), '2026-03-19', 1.0, 7.0, '分析库存扣减并发问题', NOW()),
 -- Mobile app work logs
 ((SELECT id FROM tasks WHERE task_key = 'TASK-9'), (SELECT id FROM users WHERE username = 'dev_li'), '2024-02-01', 4.0, 0.0, '配置开发环境和初始化项目', NOW()),
 ((SELECT id FROM tasks WHERE task_key = 'TASK-10'), (SELECT id FROM users WHERE username = 'dev_wang'), '2024-02-05', 4.0, 4.0, '实现基础导航结构', NOW());
 
--- Insert sample burndown points for Sprint 1 (completed sprint)
+-- Insert sample burndown points for Sprint 1 (completed sprint, 2026-02-16~02-28)
 INSERT INTO burndown_points (sprint_id, point_date, actual_remaining, ideal_remaining, calculated_at) VALUES
-                                                                                              ((SELECT id FROM sprints WHERE name = 'Sprint 1 - 用户服务'), '2024-01-01', 16, 16, NOW()),
-                                                                                              ((SELECT id FROM sprints WHERE name = 'Sprint 1 - 用户服务'), '2024-01-02', 16, 14, NOW()),
-                                                                                              ((SELECT id FROM sprints WHERE name = 'Sprint 1 - 用户服务'), '2024-01-03', 11, 13, NOW()),
-                                                                                              ((SELECT id FROM sprints WHERE name = 'Sprint 1 - 用户服务'), '2024-01-04', 8, 11, NOW()),
-                                                                                              ((SELECT id FROM sprints WHERE name = 'Sprint 1 - 用户服务'), '2024-01-05', 8, 10, NOW()),
-                                                                                              ((SELECT id FROM sprints WHERE name = 'Sprint 1 - 用户服务'), '2024-01-08', 5, 8, NOW()),
-                                                                                              ((SELECT id FROM sprints WHERE name = 'Sprint 1 - 用户服务'), '2024-01-09', 5, 6, NOW()),
-                                                                                              ((SELECT id FROM sprints WHERE name = 'Sprint 1 - 用户服务'), '2024-01-10', 3, 5, NOW()),
-                                                                                              ((SELECT id FROM sprints WHERE name = 'Sprint 1 - 用户服务'), '2024-01-11', 3, 3, NOW()),
-                                                                                              ((SELECT id FROM sprints WHERE name = 'Sprint 1 - 用户服务'), '2024-01-12', 0, 2, NOW()),
-                                                                                              ((SELECT id FROM sprints WHERE name = 'Sprint 1 - 用户服务'), '2024-01-14', 0, 0, NOW());
+                                                                                              ((SELECT id FROM sprints WHERE name = 'Sprint 1 - 用户服务'), '2026-02-16', 16, 16, NOW()),
+                                                                                              ((SELECT id FROM sprints WHERE name = 'Sprint 1 - 用户服务'), '2026-02-17', 16, 14, NOW()),
+                                                                                              ((SELECT id FROM sprints WHERE name = 'Sprint 1 - 用户服务'), '2026-02-18', 11, 13, NOW()),
+                                                                                              ((SELECT id FROM sprints WHERE name = 'Sprint 1 - 用户服务'), '2026-02-19', 8, 11, NOW()),
+                                                                                              ((SELECT id FROM sprints WHERE name = 'Sprint 1 - 用户服务'), '2026-02-20', 8, 10, NOW()),
+                                                                                              ((SELECT id FROM sprints WHERE name = 'Sprint 1 - 用户服务'), '2026-02-23', 5, 8, NOW()),
+                                                                                              ((SELECT id FROM sprints WHERE name = 'Sprint 1 - 用户服务'), '2026-02-24', 5, 6, NOW()),
+                                                                                              ((SELECT id FROM sprints WHERE name = 'Sprint 1 - 用户服务'), '2026-02-25', 3, 5, NOW()),
+                                                                                              ((SELECT id FROM sprints WHERE name = 'Sprint 1 - 用户服务'), '2026-02-26', 3, 3, NOW()),
+                                                                                              ((SELECT id FROM sprints WHERE name = 'Sprint 1 - 用户服务'), '2026-02-27', 0, 2, NOW()),
+                                                                                              ((SELECT id FROM sprints WHERE name = 'Sprint 1 - 用户服务'), '2026-02-28', 0, 0, NOW());
 
--- Insert sample burndown points for Sprint 2 (in progress)
+-- Insert sample burndown points for Sprint 2 (active, HIGH risk - actual far above ideal)
+-- Sprint 2: 2026-03-09~03-28, total 47sp (9 tasks), today=2026-03-23
+-- Ideal burn rate: 47sp / 14 working days ≈ 3.36 sp/day
 INSERT INTO burndown_points (sprint_id, point_date, actual_remaining, ideal_remaining, calculated_at) VALUES
-                                                                                              ((SELECT id FROM sprints WHERE name = 'Sprint 2 - 订单服务'), '2024-01-15', 23, 23, NOW()),
-                                                                                              ((SELECT id FROM sprints WHERE name = 'Sprint 2 - 订单服务'), '2024-01-16', 23, 21, NOW()),
-                                                                                              ((SELECT id FROM sprints WHERE name = 'Sprint 2 - 订单服务'), '2024-01-17', 20, 19, NOW()),
-                                                                                              ((SELECT id FROM sprints WHERE name = 'Sprint 2 - 订单服务'), '2024-01-18', 18, 17, NOW()),
-                                                                                              ((SELECT id FROM sprints WHERE name = 'Sprint 2 - 订单服务'), '2024-01-19', 18, 15, NOW());
+((SELECT id FROM sprints WHERE name = 'Sprint 2 - 订单服务'), '2026-03-09', 47, 47, NOW()),
+((SELECT id FROM sprints WHERE name = 'Sprint 2 - 订单服务'), '2026-03-10', 47, 44, NOW()),
+((SELECT id FROM sprints WHERE name = 'Sprint 2 - 订单服务'), '2026-03-11', 45, 41, NOW()),
+((SELECT id FROM sprints WHERE name = 'Sprint 2 - 订单服务'), '2026-03-12', 43, 37, NOW()),
+((SELECT id FROM sprints WHERE name = 'Sprint 2 - 订单服务'), '2026-03-13', 41, 34, NOW()),
+((SELECT id FROM sprints WHERE name = 'Sprint 2 - 订单服务'), '2026-03-16', 40, 30, NOW()),
+((SELECT id FROM sprints WHERE name = 'Sprint 2 - 订单服务'), '2026-03-17', 38, 27, NOW()),
+((SELECT id FROM sprints WHERE name = 'Sprint 2 - 订单服务'), '2026-03-18', 36, 24, NOW()),
+((SELECT id FROM sprints WHERE name = 'Sprint 2 - 订单服务'), '2026-03-19', 35, 20, NOW()),
+((SELECT id FROM sprints WHERE name = 'Sprint 2 - 订单服务'), '2026-03-20', 33, 17, NOW()),
+((SELECT id FROM sprints WHERE name = 'Sprint 2 - 订单服务'), '2026-03-23', 30, 13, NOW());
 
 -- =============================================
--- 5. Completion Summary
+-- 5. Agent Audit Tables
+-- =============================================
+
+-- Agent chat session table
+CREATE TABLE agent_chat_session (
+    id BIGSERIAL PRIMARY KEY,
+    session_key VARCHAR(64) UNIQUE NOT NULL,
+    user_id BIGINT NOT NULL,
+    project_id BIGINT,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_agent_session_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_agent_session_project FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE SET NULL
+);
+
+CREATE INDEX idx_agent_session_user_id ON agent_chat_session(user_id);
+CREATE INDEX idx_agent_session_project_id ON agent_chat_session(project_id);
+CREATE INDEX idx_agent_session_key ON agent_chat_session(session_key);
+
+-- Agent chat message table
+CREATE TABLE agent_chat_message (
+    id BIGSERIAL PRIMARY KEY,
+    session_id BIGINT NOT NULL,
+    role VARCHAR(20) NOT NULL,
+    question TEXT,
+    answer TEXT,
+    intent VARCHAR(50),
+    tools_used JSONB,
+    risk_level VARCHAR(20),
+    trace_id VARCHAR(64),
+    latency_ms INT,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_agent_message_session FOREIGN KEY (session_id) REFERENCES agent_chat_session(id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_agent_message_session_id ON agent_chat_message(session_id);
+CREATE INDEX idx_agent_message_trace_id ON agent_chat_message(trace_id);
+CREATE INDEX idx_agent_message_created_at ON agent_chat_message(created_at);
+
+-- Agent tool call log table
+CREATE TABLE agent_tool_call_log (
+    id BIGSERIAL PRIMARY KEY,
+    message_id BIGINT NOT NULL,
+    tool_name VARCHAR(64) NOT NULL,
+    input_payload JSONB,
+    output_payload JSONB,
+    status VARCHAR(20) NOT NULL,
+    error_code VARCHAR(50),
+    duration_ms INT,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_agent_tool_message FOREIGN KEY (message_id) REFERENCES agent_chat_message(id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_agent_tool_message_id ON agent_tool_call_log(message_id);
+CREATE INDEX idx_agent_tool_name ON agent_tool_call_log(tool_name);
+CREATE INDEX idx_agent_tool_status ON agent_tool_call_log(status);
+CREATE INDEX idx_agent_tool_created_at ON agent_tool_call_log(created_at);
+
+-- =============================================
+-- 6. Completion Summary
 -- =============================================
 
 SELECT 'Database initialization completed successfully!' AS status,
@@ -491,4 +576,7 @@ SELECT 'Database initialization completed successfully!' AS status,
        (SELECT COUNT(*) FROM sprints) AS sprints_count,
        (SELECT COUNT(*) FROM tasks) AS tasks_count,
        (SELECT COUNT(*) FROM work_logs) AS work_logs_count,
-       (SELECT COUNT(*) FROM burndown_points) AS burndown_points_count;
+       (SELECT COUNT(*) FROM burndown_points) AS burndown_points_count,
+       (SELECT COUNT(*) FROM agent_chat_session) AS agent_sessions_count,
+       (SELECT COUNT(*) FROM agent_chat_message) AS agent_messages_count,
+       (SELECT COUNT(*) FROM agent_tool_call_log) AS agent_tool_calls_count;

@@ -1,0 +1,29 @@
+{
+  "mcpServers": {
+    "scrum-standup-py": {
+      "command": "python",
+      "args": ["D:/java/claude/projects/2/mcp-server-python/main.py"],
+      "env": {
+        "BACKEND_URL": "http://localhost:8080/api/v1",
+        "BACKEND_USERNAME": "admin",
+        "BACKEND_PASSWORD": "password123",
+        "LOG_LEVEL": "INFO"
+      },
+      "disabled": false,
+      "timeout": 60,
+      "autoApprove": [
+        "get_projects",
+        "get_active_sprint",
+        "get_active_sprint_tasks",
+        "get_burndown_data",
+        "get_sprint_completion_probability",
+        "trigger_burndown_snapshot",
+        "create_task",
+        "update_task_status",
+        "ai_generate_task_description",
+        "get_my_worklogs",
+        "search_similar_tasks"
+      ]
+    }
+  }
+}

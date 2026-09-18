@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>LangGraph 站会问答图 - 可视化</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      min-height: 100vh;
+      padding: 32px;
+    }
+    h1 {
+      text-align: center;
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #a78bfa;
+      margin-bottom: 6px;
+      letter-spacing: 0.02em;
+    }
+    .subtitle {
+      text-align: center;
+      font-size: 0.85rem;
+      color: #64748b;
+      margin-bottom: 32px;
+    }
+    .graph-container {
+      background: #1e2130;
+      border: 1px solid #2d3148;
+      border-radius: 16px;
+      padding: 32px;
+      max-width: 900px;
+      margin: 0 auto 40px;
+      box-shadow: 0 4px 32px rgba(0,0,0,0.4);
+    }
+    .legend {
+      max-width: 900px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+    }
+    .legend-card {
+      background: #1e2130;
+      border: 1px solid #2d3148;
+      border-radius: 12px;
+      padding: 16px 20px;
+    }
+    .legend-card h3 {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #64748b;
+      margin-bottom: 10px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 8px;
+      font-size: 0.83rem;
+    }
+    .dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      margin-top: 3px;
+    }
+    .dot-green  { background: #4ade80; }
+    .dot-blue   { background: #60a5fa; }
+    .dot-yellow { background: #fbbf24; }
+    .dot-orange { background: #fb923c; }
+    .dot-purple { background: #a78bfa; }
+    .dot-red    { background: #f87171; }
+    .node-name { color: #cbd5e1; font-weight: 600; min-width: 130px; }
+    .node-desc { color: #64748b; }
+  </style>
+</head>
+<body>
+
+<h1>LangGraph 站会问答图</h1>
+<p class="subtitle">StandupGraph · backend/langchain-python/app/graph/graph.py</p>
+
+<div class="graph-container">
+  <div class="mermaid">
+flowchart TD
+    START(["⬤ START"])
+    END_NODE(["⬤ END"])
+
+    A["🔍 validate_input\n校验输入字段"]
+    B["⚡ fetch_core_tools\n并行调用 3 个工具"]
+    C["🧪 validate_data\n检查数据完整性"]
+    D["🔁 retry_tools\n重试失败工具（最多1次）"]
+    E["🔎 enrich_data\nburndown 为空时补充说明"]
+    F["🤖 summarize\nLLM 生成结构化 JSON"]
+    G["✅ finalize\n兜底解析 + 响应映射"]
+    H["⚠️ early_exit\nsprintId 缺失，仅查任务"]
+
+    START --> A
+
+    A -- "sprint_id 存在" --> B
+    A -- "sprint_id 缺失" --> H
+
+    B --> C
+
+    C -- "有工具失败 & 未重试" --> D
+    C -- "burndown 为空 & 未 enrich" --> E
+    C -- "数据完整" --> F
+
+    D -- "burndown 仍缺失" --> E
+    D -- "数据可用" --> F
+
+    E --> F
+    F --> G
+
+    G --> END_NODE
+    H --> END_NODE
+
+    style START  fill:#4ade80,color:#000,stroke:none
+    style END_NODE fill:#4ade80,color:#000,stroke:none
+    style A fill:#1d4ed8,color:#fff,stroke:#3b82f6,stroke-width:1.5px
+    style B fill:#0f766e,color:#fff,stroke:#14b8a6,stroke-width:1.5px
+    style C fill:#0f766e,color:#fff,stroke:#14b8a6,stroke-width:1.5px
+    style D fill:#b45309,color:#fff,stroke:#f59e0b,stroke-width:1.5px
+    style E fill:#b45309,color:#fff,stroke:#f59e0b,stroke-width:1.5px
+    style F fill:#6d28d9,color:#fff,stroke:#a78bfa,stroke-width:1.5px
+    style G fill:#6d28d9,color:#fff,stroke:#a78bfa,stroke-width:1.5px
+    style H fill:#991b1b,color:#fff,stroke:#f87171,stroke-width:1.5px
+  </div>
+</div>
+
+<div class="legend">
+  <div class="legend-card">
+    <h3>节点说明</h3>
+    <div class="legend-item">
+      <span class="dot dot-blue"></span>
+      <span class="node-name">validate_input</span>
+      <span class="node-desc">校验 sprint_id，初始化状态字段</span>
+    </div>
+    <div class="legend-item">
+      <span class="dot" style="background:#14b8a6"></span>
+      <span class="node-name">fetch_core_tools</span>
+      <span class="node-desc">asyncio.gather 并行调用 3 工具，独立捕获异常</span>
+    </div>
+    <div class="legend-item">
+      <span class="dot" style="background:#14b8a6"></span>
+      <span class="node-name">validate_data</span>
+      <span class="node-desc">检测工具失败与数据缺失，决定路由</span>
+    </div>
+    <div class="legend-item">
+      <span class="dot dot-yellow"></span>
+      <span class="node-name">retry_tools</span>
+      <span class="node-desc">对失败工具重试 1 次，更新状态</span>
+    </div>
+    <div class="legend-item">
+      <span class="dot dot-orange"></span>
+      <span class="node-name">enrich_data</span>
+      <span class="node-desc">burndown 为空时写入占位说明</span>
+    </div>
+    <div class="legend-item">
+      <span class="dot dot-purple"></span>
+      <span class="node-name">summarize</span>
+      <span class="node-desc">调用 LLM，生成 JSON 格式回答</span>
+    </div>
+    <div class="legend-item">
+      <span class="dot dot-purple"></span>
+      <span class="node-name">finalize</span>
+      <span class="node-desc">解析 JSON，失败时 fallback，映射响应字段</span>
+    </div>
+    <div class="legend-item">
+      <span class="dot dot-red"></span>
+      <span class="node-name">early_exit</span>
+      <span class="node-desc">短路节点：仅查进行中任务，跳过燃尽工具</span>
+    </div>
+  </div>
+
+  <div class="legend-card">
+    <h3>条件路由</h3>
+    <div class="legend-item">
+      <span class="dot dot-blue"></span>
+      <span class="node-desc"><b style="color:#cbd5e1">validate_input 后</b><br>sprint_id 有值 → fetch_core_tools<br>sprint_id 缺失 → early_exit</span>
+    </div>
+    <div class="legend-item">
+      <span class="dot" style="background:#14b8a6"></span>
+      <span class="node-desc"><b style="color:#cbd5e1">validate_data 后</b><br>有工具失败 &amp; retry_count &lt; 1 → retry_tools<br>burndown 空 &amp; 未 enrich → enrich_data<br>其他 → summarize</span>
+    </div>
+    <div class="legend-item">
+      <span class="dot dot-yellow"></span>
+      <span class="node-desc"><b style="color:#cbd5e1">retry_tools 后</b><br>burndown 仍缺失 → enrich_data<br>数据可用 → summarize</span>
+    </div>
+  </div>
+
+  <div class="legend-card">
+    <h3>状态字段（StandupGraphState）</h3>
+    <div class="legend-item" style="flex-direction:column;gap:4px">
+      <span style="color:#60a5fa;font-size:0.8rem">输入</span>
+      <span class="node-desc">question · project_id · sprint_id · user_id · trace_id</span>
+    </div>
+    <div class="legend-item" style="flex-direction:column;gap:4px">
+      <span style="color:#4ade80;font-size:0.8rem">工具输出</span>
+      <span class="node-desc">in_progress_raw · burndown_raw · risk_raw</span>
+    </div>
+    <div class="legend-item" style="flex-direction:column;gap:4px">
+      <span style="color:#fbbf24;font-size:0.8rem">过程控制</span>
+      <span class="node-desc">tool_errors · missing_fields · retry_count · enriched</span>
+    </div>
+    <div class="legend-item" style="flex-direction:column;gap:4px">
+      <span style="color:#a78bfa;font-size:0.8rem">最终输出</span>
+      <span class="node-desc">answer · tools_used · evidence · risk_level</span>
+    </div>
+  </div>
+</div>
+
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'dark',
+    flowchart: { curve: 'basis', padding: 20 },
+    themeVariables: {
+      primaryColor: '#1e2130',
+      primaryTextColor: '#e2e8f0',
+      primaryBorderColor: '#4a5568',
+      lineColor: '#64748b',
+      edgeLabelBackground: '#1e2130',
+      fontSize: '14px'
+    }
+  });
+</script>
+</body>
+</html>

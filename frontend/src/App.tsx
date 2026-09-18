@@ -12,6 +12,7 @@ import SprintBoard from './pages/SprintBoard'
 import TaskBoard from './pages/TaskBoard'
 import BurndownChart from './pages/BurndownChart'
 import RoleManagement from './pages/RoleManagement'
+import StandupAssistant from './pages/StandupAssistant'
 import { useAuthStore } from './store/authStore'
 
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -73,6 +74,14 @@ const App: React.FC = () => {
           element={
             <PrivateRoute>
               <RoleManagement />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/standup-assistant"
+          element={
+            <PrivateRoute>
+              <StandupAssistant />
             </PrivateRoute>
           }
         />
