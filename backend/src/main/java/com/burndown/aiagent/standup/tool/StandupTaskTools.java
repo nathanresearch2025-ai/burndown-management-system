@@ -39,7 +39,7 @@ public class StandupTaskTools {
      * 获取用户当前进行中的任务列表
      *
      * 功能：
-     * - 查询指定项目中，指定用户的所有"进行中"状态的任务
+     * - 查询指定 Sprint 中，指定用户的所有"进行中"状态的任务
      * - 返回任务的关键信息：任务编号、标题、优先级、故事点、更新时间
      *
      * AI 调用时机：
@@ -47,18 +47,18 @@ public class StandupTaskTools {
      * - 用户询问"今天的工作进展"
      * - 用户询问"我负责的任务"
      *
-     * @param request 包含项目ID和用户ID的请求参数
+     * @param request 包含 SprintID 和用户ID的请求参数
      * @return 简洁的任务数据字符串，供 AI 理解和生成自然回答
      */
     @Description("获取用户当前进行中的任务列表")
     public String getInProgressTasks(GetInProgressTasksRequest request) {
-        log.info("Tool called: getInProgressTasks - projectId: {}, userId: {}",
-                request.projectId(), request.userId());
+        log.info("Tool called: getInProgressTasks - sprintId: {}, userId: {}",
+                request.sprintId(), request.userId());
 
         try {
-            // 查询任务：项目匹配 + 用户匹配 + 状态为"进行中"
-            List<Task> tasks = taskRepository.findByProjectIdAndAssigneeIdAndStatus(
-                    request.projectId(),
+            // 查询任务：Sprint 匹配 + 用户匹配 + 状态为"进行中"
+            List<Task> tasks = taskRepository.findBySprintIdAndAssigneeIdAndStatus(
+                    request.sprintId(),
                     request.userId(),
                     Task.TaskStatus.IN_PROGRESS
             );
@@ -134,8 +134,8 @@ public class StandupTaskTools {
      */
     public record GetInProgressTasksRequest(
             @JsonProperty(required = true)
-            @JsonPropertyDescription("项目 ID")
-            Long projectId,
+            @JsonPropertyDescription("Sprint ID")
+            Long sprintId,
 
             @JsonProperty(required = true)
             @JsonPropertyDescription("用户 ID")
