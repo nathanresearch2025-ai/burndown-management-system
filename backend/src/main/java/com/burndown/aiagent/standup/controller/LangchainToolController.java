@@ -33,7 +33,10 @@ public class LangchainToolController {
     @Operation(summary = "获取进行中任务列表")
     public String inProgressTasks(@RequestBody(required = false) LangchainToolRequest request,
                                    @RequestParam(required = false) Long projectId,
-                                   @RequestParam(required = false) Long userId) {
+                                  @RequestParam(required = false) Long sprintId,
+                                   @RequestParam(required = false) Long userId
+
+    ) {
         log.info("=== [LangchainToolController] /in-progress-tasks called ===");
         log.info("Request body: {}", request);
         log.info("Query params - projectId: {}, userId: {}", projectId, userId);
@@ -41,11 +44,12 @@ public class LangchainToolController {
         // 支持 POST (body) 和 GET (query params)
         Long finalProjectId = request != null ? request.getProjectId() : projectId;
         Long finalUserId = request != null ? request.getUserId() : userId;
+        Long finalSprintId = request != null ? request.getSprintId() : sprintId;
 
         log.info("Final params - projectId: {}, userId: {}", finalProjectId, finalUserId);
 
         String result = standupTaskTools.getInProgressTasks(
-                new StandupTaskTools.GetInProgressTasksRequest(finalProjectId, finalUserId)
+                new StandupTaskTools.GetInProgressTasksRequest(finalProjectId, finalSprintId, finalUserId)
         );
 
         log.info("Response: {}", result.length() > 200 ? result.substring(0, 200) + "..." : result);
