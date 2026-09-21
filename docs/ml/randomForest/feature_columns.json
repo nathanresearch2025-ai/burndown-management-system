@@ -1,0 +1,23 @@
+{
+  "feature_columns": [
+    "sprint_days",
+    "days_elapsed",
+    "committed_sp",
+    "remaining_sp",
+    "completed_sp",
+    "velocity_current",
+    "velocity_avg_5",
+    "velocity_std_5",
+    "blocked_stories",
+    "attendance_rate",
+    "ratio_feature",
+    "ratio_bug",
+    "ratio_tech_debt",
+    "days_remaining",
+    "elapsed_ratio",
+    "remaining_ratio",
+    "velocity_gap",
+    "projected_sp",
+    "projected_completion_ratio"
+  ]
+}

@@ -1,0 +1,274 @@
+{
+	"info": {
+		"_postman_id": "a2a-standup-agent",
+		"name": "A2A Standup Agent Tests",
+		"description": "Agent-to-Agent 通信测试集合\n\n测试场景：\n- 场景1：DataAgent 检测燃尽图异常 → 请求 AnalystAgent 验证\n- 场景2：AnalystAgent 数据不足 → 请求 DataAgent 补充",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8091",
+			"type": "string"
+		},
+		{
+			"key": "project_id",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "sprint_id",
+			"value": "2",
+			"type": "string"
+		},
+		{
+			"key": "user_id",
+			"value": "1",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "场景1 - DataAgent 检测异常并请求验证",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 200', function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"pm.test('Response has answer', function () {",
+							"    var json = pm.response.json();",
+							"    pm.expect(json.answer).to.be.a('string').and.not.empty;",
+							"});",
+							"pm.test('A2A trace exists', function () {",
+							"    var json = pm.response.json();",
+							"    pm.expect(json.evidence).to.be.an('array');",
+							"    console.log('[A2A Trace]', JSON.stringify(json.evidence, null, 2));",
+							"});",
+							"pm.test('DataAgent called AnalystAgent', function () {",
+							"    var json = pm.response.json();",
+							"    var hasA2ACall = json.evidence.some(e => ",
+							"        e.caller === 'data_agent' && e.callee === 'analyst_agent'",
+							"    );",
+							"    pm.expect(hasA2ACall).to.be.true;",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"question\": \"当前 Sprint 燃尽图数据是否正常？\",\n    \"projectId\": {{project_id}},\n    \"sprintId\": {{sprint_id}},\n    \"userId\": {{user_id}},\n    \"traceId\": \"a2a-scenario1-001\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/agent/standup/a2a",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"agent",
+						"standup",
+						"a2a"
+					]
+				},
+				"description": "场景1：DataAgent 收集燃尽图数据时检测到异常（如最近3天无变化），主动调用 AnalystAgent 验证是数据错误还是真实停滞"
+			},
+			"response": []
+		},
+		{
+			"name": "场景2 - AnalystAgent 数据不足请求补充",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 200', function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"pm.test('Response has risk_level', function () {",
+							"    var json = pm.response.json();",
+							"    pm.expect(json.riskLevel).to.be.oneOf(['LOW', 'MEDIUM', 'HIGH', 'UNKNOWN']);",
+							"});",
+							"pm.test('A2A trace shows data supplement', function () {",
+							"    var json = pm.response.json();",
+							"    var hasSupplementCall = json.evidence.some(e => ",
+							"        e.caller === 'analyst_agent' && e.callee === 'data_agent' && e.reason.includes('补充')",
+							"    );",
+							"    console.log('[A2A Supplement]', hasSupplementCall ? 'YES' : 'NO');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"question\": \"评估当前风险等级\",\n    \"projectId\": {{project_id}},\n    \"sprintId\": {{sprint_id}},\n    \"userId\": {{user_id}},\n    \"traceId\": \"a2a-scenario2-001\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/agent/standup/a2a",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"agent",
+						"standup",
+						"a2a"
+					]
+				},
+				"description": "场景2：AnalystAgent 发现数据不足（如只有燃尽图没有任务列表），主动调用 DataAgent 补充任务明细"
+			},
+			"response": []
+		},
+		{
+			"name": "调试模式 - 强制触发 A2A 验证",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 200', function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"pm.test('A2A trace must exist (forced)', function () {",
+							"    var json = pm.response.json();",
+							"    pm.expect(json.evidence).to.be.an('array').and.not.empty;",
+							"    console.log('[Forced A2A]', JSON.stringify(json.evidence, null, 2));",
+							"});",
+							"pm.test('DataAgent called AnalystAgent', function () {",
+							"    var json = pm.response.json();",
+							"    var hasCall = json.evidence.some(e => e.caller === 'data_agent');",
+							"    pm.expect(hasCall).to.be.true;",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"question\": \"测试 A2A 调用链\",\n    \"projectId\": {{project_id}},\n    \"sprintId\": {{sprint_id}},\n    \"userId\": {{user_id}},\n    \"traceId\": \"a2a-force-test-001\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/agent/standup/a2a?force_a2a=true",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"agent",
+						"standup",
+						"a2a"
+					],
+					"query": [
+						{
+							"key": "force_a2a",
+							"value": "true"
+						}
+					]
+				},
+				"description": "调试模式：强制触发 A2A 调用，用于测试 Agent 间通信机制"
+			},
+			"response": []
+		},
+		{
+			"name": "Debug - Force A2A Call",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status code is 200', function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"pm.test('A2A trace must exist', function () {",
+							"    var json = pm.response.json();",
+							"    pm.expect(json.evidence).to.be.an('array').and.not.empty;",
+							"    console.log('[Forced A2A]', JSON.stringify(json.evidence, null, 2));",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"question\": \"Test A2A\",\n    \"projectId\": {{project_id}},\n    \"sprintId\": {{sprint_id}},\n    \"userId\": {{user_id}},\n    \"traceId\": \"a2a-force-001\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/agent/standup/a2a?force_a2a=true",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"agent",
+						"standup",
+						"a2a"
+					],
+					"query": [
+						{
+							"key": "force_a2a",
+							"value": "true"
+						}
+					]
+				},
+				"description": "Force A2A call for testing"
+			},
+			"response": []
+		}
+	]
+}

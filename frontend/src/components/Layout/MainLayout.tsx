@@ -5,6 +5,7 @@ import { useAuthStore } from '../../store/authStore';
 import { usePermission } from '../../hooks/usePermission';
 import QuickAccessMenu from './QuickAccessMenu';
 import LanguageSwitcher from '../LanguageSwitcher';
+import GlobalAssistantDrawer from '../GlobalAssistantDrawer';
 import { LogoutOutlined } from '@ant-design/icons';
 
 const { Header, Content } = Layout;
@@ -46,49 +47,54 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   }
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
-      <Header style={{
-        background: '#fff',
-        padding: '0 24px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-        height: '64px',
-        overflow: 'visible'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: '1 1 auto', minWidth: 0 }}>
-          <Text strong style={{ fontSize: '18px', color: '#1890ff', whiteSpace: 'nowrap', flexShrink: 0 }}>
-            {t('common.systemName')}
-          </Text>
-          <Menu
-            mode="horizontal"
-            selectedKeys={[location.pathname]}
-            items={menuItems}
-            onClick={({ key }) => navigate(key)}
-            style={{ border: 'none', flex: '1 1 auto', minWidth: 0 }}
-          />
-        </div>
+    <>
+      <Layout style={{ minHeight: '100vh' }}>
+        <Header style={{
+          background: '#fff',
+          padding: '0 24px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+          height: '64px',
+          overflow: 'visible'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: '1 1 auto', minWidth: 0 }}>
+            <Text strong style={{ fontSize: '18px', color: '#1890ff', whiteSpace: 'nowrap', flexShrink: 0 }}>
+              {t('common.systemName')}
+            </Text>
+            <Menu
+              mode="horizontal"
+              selectedKeys={[location.pathname]}
+              items={menuItems}
+              onClick={({ key }) => navigate(key)}
+              style={{ border: 'none', flex: '1 1 auto', minWidth: 0 }}
+            />
+          </div>
 
-        <Space size="middle" style={{ flex: '0 0 auto', flexShrink: 0 }}>
-          <QuickAccessMenu />
-          <LanguageSwitcher />
-          <Text style={{ whiteSpace: 'nowrap' }}>{t('dashboard.welcome')}, {user?.username || t('common.name')}</Text>
-          <Button
-            type="text"
-            icon={<LogoutOutlined />}
-            onClick={handleLogout}
-            style={{ whiteSpace: 'nowrap' }}
-          >
-            {t('auth.logout')}
-          </Button>
-        </Space>
-      </Header>
+          <Space size="middle" style={{ flex: '0 0 auto', flexShrink: 0 }}>
+            <QuickAccessMenu />
+            <LanguageSwitcher />
+            <Text style={{ whiteSpace: 'nowrap' }}>{t('dashboard.welcome')}, {user?.username || t('common.name')}</Text>
+            <Button
+              type="text"
+              icon={<LogoutOutlined />}
+              onClick={handleLogout}
+              style={{ whiteSpace: 'nowrap' }}
+            >
+              {t('auth.logout')}
+            </Button>
+          </Space>
+        </Header>
 
-      <Content style={{ padding: '24px', background: '#f0f2f5' }}>
-        {children}
-      </Content>
-    </Layout>
+        <Content style={{ padding: '24px', background: '#f0f2f5' }}>
+          {children}
+        </Content>
+      </Layout>
+
+      {/* 全局站会助手侧拉框 */}
+      <GlobalAssistantDrawer />
+    </>
   );
 };
 

@@ -5,7 +5,7 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/burndown_db
     username: postgres
-    password: root
+    password: postgres
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 50
@@ -44,6 +44,15 @@ spring:
           max-idle: 8
           min-idle: 0
 
+  ai:
+    openai:
+      base-url: https://api.deepseek.com
+      api-key: sk-0bc064c6fb5d4fd48300705c47d4b11e
+      chat:
+        options:
+          model: deepseek-chat
+          temperature: 0.2
+
 server:
   port: 8080
   servlet:
@@ -54,15 +63,42 @@ jwt:
   expiration: 604800000
 
 ai:
-  enabled: false
-  base-url:
-  api-key:
-  chat-model:
+  enabled: true
+  base-url: https://api.deepseek.com
+  api-key: sk-0bc064c6fb5d4fd48300705c47d4b11e
+  chat-model: deepseek-chat
   timeout: 30s
   max-similar-tasks: 5
   rate-limit:
     max-requests-per-user: 50
     window-minutes: 10
+  embedding:
+    provider: simple  # Options: simple (本地), djl (本地DJL), api (外部API)
+    # Simple local embedding configuration (推荐 - 无需外部依赖)
+    simple:
+      algorithm: TF-IDF + Hashing
+      dimension: 384
+    # DJL local embedding configuration
+    djl:
+      model-name: sentence-transformers/all-MiniLM-L6-v2
+      hf-token: ${HF_TOKEN:}
+    # API-based embedding configuration (fallback)
+    api:
+      embedding-model: text-embedding-3-small
+      embedding-base-url: ${EMBEDDING_BASE_URL:}
+      embedding-api-key: ${EMBEDDING_API_KEY:}
+
+langchain:
+  enabled: true
+  base-url: http://localhost:8091
+  timeout: 120s
+
+agent:
+  standup:
+    enabled: true
+    max-tool-rounds: 3
+    response-timeout: 30s
+    require-evidence: true
 
 springdoc:
   api-docs:

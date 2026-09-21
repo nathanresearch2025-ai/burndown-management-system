@@ -1,0 +1,59 @@
+{
+  "train_mae": 0.1625386942625046,
+  "test_mae": 2.841543616771698,
+  "train_rmse": 0.22288433947425942,
+  "test_rmse": 4.112299447566821,
+  "train_r2": 0.9998550987194835,
+  "test_r2": 0.9466729141736975,
+  "test_accuracy": 77.0,
+  "feature_importance": [
+    {
+      "feature": "story_points",
+      "importance": 0.7913241386413574
+    },
+    {
+      "feature": "task_type_encoded",
+      "importance": 0.09143028408288956
+    },
+    {
+      "feature": "priority_encoded",
+      "importance": 0.038908444344997406
+    },
+    {
+      "feature": "assignee_id",
+      "importance": 0.01284831389784813
+    },
+    {
+      "feature": "description_length",
+      "importance": 0.011821312829852104
+    },
+    {
+      "feature": "created_day_of_week",
+      "importance": 0.011640514247119427
+    },
+    {
+      "feature": "project_id",
+      "importance": 0.008385993540287018
+    },
+    {
+      "feature": "labels_count",
+      "importance": 0.0077841393649578094
+    },
+    {
+      "feature": "created_quarter",
+      "importance": 0.0076891640201210976
+    },
+    {
+      "feature": "days_to_due",
+      "importance": 0.006933457683771849
+    },
+    {
+      "feature": "title_length",
+      "importance": 0.006312637589871883
+    },
+    {
+      "feature": "created_month",
+      "importance": 0.004921650979667902
+    }
+  ]
+}

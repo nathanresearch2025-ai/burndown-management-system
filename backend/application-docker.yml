@@ -8,6 +8,17 @@ spring:
       host: localhost
       port: 6379
 
+ai:
+  enabled: ${AI_ENABLED:false}
+  base-url: ${AI_BASE_URL:}
+  api-key: ${AI_API_KEY:}
+  chat-model: ${AI_CHAT_MODEL:}
+  timeout: ${AI_TIMEOUT:30s}
+  max-similar-tasks: ${AI_MAX_SIMILAR_TASKS:5}
+  rate-limit:
+    max-requests-per-user: ${AI_RATE_LIMIT_MAX_REQUESTS:10}
+    window-minutes: ${AI_RATE_LIMIT_WINDOW_MINUTES:60}
+
 management:
   endpoints:
     web:

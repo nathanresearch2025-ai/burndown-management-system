@@ -1,0 +1,590 @@
+{
+	"info": {
+		"_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+		"name": "Standup Agent API",
+		"description": "Scrum 站会助手 API 测试集合 - 包含所有测试案例",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "12345678"
+	},
+	"item": [
+		{
+			"name": "站会问答 - 正常查询",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Response has correct structure\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData).to.have.property('code');",
+							"    pm.expect(jsonData).to.have.property('message');",
+							"    pm.expect(jsonData).to.have.property('traceId');",
+							"    pm.expect(jsonData).to.have.property('data');",
+							"});",
+							"",
+							"pm.test(\"Response code is OK\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.code).to.eql('OK');",
+							"});",
+							"",
+							"pm.test(\"Data has answer field\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.data).to.have.property('answer');",
+							"    pm.expect(jsonData.data.answer).to.be.a('string');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"question\": \"当前项目的进度怎么样？\",\n    \"projectId\": 1,\n    \"sprintId\": 1,\n    \"timezone\": \"Asia/Shanghai\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/agent/standup/query",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"agent",
+						"standup",
+						"query"
+					]
+				},
+				"description": "测试正常的站会问答查询"
+			},
+			"response": []
+		},
+		{
+			"name": "站会问答 - 查询团队成员任务",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Response contains tools used\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.data).to.have.property('toolsUsed');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"question\": \"张三今天做了什么？\",\n    \"projectId\": 1,\n    \"sprintId\": 1,\n    \"timezone\": \"Asia/Shanghai\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/agent/standup/query",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"agent",
+						"standup",
+						"query"
+					]
+				},
+				"description": "查询特定团队成员的任务进展"
+			},
+			"response": []
+		},
+		{
+			"name": "站会问答 - 查询燃尽图偏差",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Summary contains burndown deviation\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    if (jsonData.data.summary) {",
+							"        pm.expect(jsonData.data.summary).to.have.property('burndownDeviationHours');",
+							"    }",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"question\": \"当前燃尽图与理想线偏差多少？\",\n    \"projectId\": 1,\n    \"sprintId\": 1,\n    \"timezone\": \"Asia/Shanghai\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/agent/standup/query",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"agent",
+						"standup",
+						"query"
+					]
+				},
+				"description": "查询燃尽图与理想线的偏差情况"
+			},
+			"response": []
+		},
+		{
+			"name": "站会问答 - 查询风险任务",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Summary contains risk level\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    if (jsonData.data.summary) {",
+							"        pm.expect(jsonData.data.summary).to.have.property('riskLevel');",
+							"    }",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"question\": \"有哪些任务存在风险？\",\n    \"projectId\": 1,\n    \"sprintId\": 1,\n    \"timezone\": \"Asia/Shanghai\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/agent/standup/query",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"agent",
+						"standup",
+						"query"
+					]
+				},
+				"description": "查询存在风险的任务"
+			},
+			"response": []
+		},
+		{
+			"name": "站会问答 - 不带Sprint ID",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Response has data\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.data).to.exist;",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"question\": \"项目整体进度如何？\",\n    \"projectId\": 1,\n    \"timezone\": \"Asia/Shanghai\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/agent/standup/query",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"agent",
+						"standup",
+						"query"
+					]
+				},
+				"description": "不指定 Sprint ID，查询整个项目的情况"
+			},
+			"response": []
+		},
+		{
+			"name": "站会问答 - 必填字段缺失 (无Question)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"projectId\": 1,\n    \"sprintId\": 1,\n    \"timezone\": \"Asia/Shanghai\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/agent/standup/query",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"agent",
+						"standup",
+						"query"
+					]
+				},
+				"description": "测试缺少必填字段 question 的情况"
+			},
+			"response": []
+		},
+		{
+			"name": "站会问答 - 必填字段缺失 (无ProjectId)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"question\": \"当前进度如何？\",\n    \"sprintId\": 1,\n    \"timezone\": \"Asia/Shanghai\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/agent/standup/query",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"agent",
+						"standup",
+						"query"
+					]
+				},
+				"description": "测试缺少必填字段 projectId 的情况"
+			},
+			"response": []
+		},
+		{
+			"name": "站会问答 - 空Question",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"question\": \"\",\n    \"projectId\": 1,\n    \"sprintId\": 1,\n    \"timezone\": \"Asia/Shanghai\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/agent/standup/query",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"agent",
+						"standup",
+						"query"
+					]
+				},
+				"description": "测试空字符串 question 的情况"
+			},
+			"response": []
+		},
+		{
+			"name": "站会问答 - 不同时区 (UTC)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"question\": \"当前进度如何？\",\n    \"projectId\": 1,\n    \"sprintId\": 1,\n    \"timezone\": \"UTC\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/agent/standup/query",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"agent",
+						"standup",
+						"query"
+					]
+				},
+				"description": "测试使用 UTC 时区"
+			},
+			"response": []
+		},
+		{
+			"name": "站会问答 - 复杂问题",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Response has evidence\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.data).to.have.property('evidence');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"question\": \"分析当前 Sprint 的燃尽情况，识别风险任务，并给出改进建议\",\n    \"projectId\": 1,\n    \"sprintId\": 1,\n    \"timezone\": \"Asia/Shanghai\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/agent/standup/query",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"agent",
+						"standup",
+						"query"
+					]
+				},
+				"description": "测试复杂的多维度问题"
+			},
+			"response": []
+		},
+		{
+			"name": "站会问答 - 长文本Question",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"question\": \"我想详细了解当前 Sprint 的整体情况，包括所有团队成员的任务进展、燃尽图与理想线的对比、存在的风险点以及需要关注的阻塞问题，同时希望了解预计完成时间是否能按计划达成\",\n    \"projectId\": 1,\n    \"sprintId\": 1,\n    \"timezone\": \"Asia/Shanghai\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/agent/standup/query",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"agent",
+						"standup",
+						"query"
+					]
+				},
+				"description": "测试长文本问题"
+			},
+			"response": []
+		},
+		{
+			"name": "站会问答 - 特殊字符",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"question\": \"任务 #123 & 任务 #456 的进度如何？@张三 @李四\",\n    \"projectId\": 1,\n    \"sprintId\": 1,\n    \"timezone\": \"Asia/Shanghai\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/agent/standup/query",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"agent",
+						"standup",
+						"query"
+					]
+				},
+				"description": "测试包含特殊字符的问题"
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8080",
+			"type": "string"
+		}
+	]
+}

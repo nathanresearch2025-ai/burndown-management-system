@@ -1,0 +1,29 @@
+{
+  "baseline": {
+    "mae": 2.5637222204208374,
+    "rmse": 3.7395148945403087,
+    "r2": 0.9559030123182308,
+    "accuracy": 82.0
+  },
+  "optimized": {
+    "mae": 2.3143093276023863,
+    "rmse": 3.500323582194175,
+    "r2": 0.9613637670057248,
+    "accuracy": 85.0
+  },
+  "improvement": {
+    "mae_reduction": 0.24941289281845114,
+    "accuracy_gain": 3.0
+  },
+  "best_params": {
+    "max_depth": 3,
+    "learning_rate": 0.021457844451646984,
+    "n_estimators": 420,
+    "subsample": 0.6305662555486299,
+    "colsample_bytree": 0.7749577953374347,
+    "min_child_weight": 5,
+    "gamma": 0.3387392127944885,
+    "reg_alpha": 0.823331732187933,
+    "reg_lambda": 0.6940278623224542
+  }
+}

@@ -1,0 +1,89 @@
+# 三、详细对比
+
+## 1. 架构模式
+
+✅ **V1：固定业务流水线 + 局部条件分支（不是 Agent）**
+节点都是普通 Python 业务函数：validate_input /fetch_core_tools/validate_data /retry_tools/enrich_data /summarize
+
+- 流转路径大体固定，分支只用来处理 burndown 缺失重试；
+- 节点**不是 Agent**，没有 LLM 自主规划能力；
+- LLM 仅在`summarize`一次性调用一次做汇总；
+- 工具调用逻辑写死在`fetch_core_tools`，重试逻辑硬编码。
+
+✅ **V2：Supervisor 多智能体架构（Multi-agent）**
+
+- supervisor（主管 Agent，LLM 驱动）：**动态规划任务**，读取全局 state，决定下一步交给哪个子 Agent；
+- 三个独立子 Agent：
+  - data_agent：数据 Agent，支持 ReAct 循环（自己可以多次调用工具，循环思考→行动→观察）
+  - analyst_agent：数据分析 Agent
+  - writer_agent：报告生成 Agent
+- 规则：**任何子 Agent 干完，统一回到 supervisor，由主管再次判断下一步动作**。
+
+>
+> 这个是典型多 Agent “主管 - 工人” 模式。
+
+## 2. 路由方式
+
+- V1：**路由逻辑硬编码写死**`route_after_retry`、`route_after_validate_data`都是硬编码判断 missing_fields、enriched 标记；
+分支规则是开发提前写好的业务判断，**不是 LLM 自主决策**。
+- V2：**路由由 supervisor 这个 LLM Agent 动态输出**
+`route_supervisor`读取 supervisor_node 输出的`state["next"]`，这个`next`的值是**LLM 自己思考后生成**，决定下一个 Agent。
+
+>
+> 分支不是提前写死的 if else，由大模型根据当前任务状态自主选择。
+
+## 3. 循环能力
+
+- V1：局部小循环，仅限 burndown 重试、enrich 补充，循环逻辑固定。
+- V2：**全局循环**
+子 Agent 完成后回到 supervisor，主管可以反复调度不同 Agent，比如：
+supervisor → data_agent（查数据）→ supervisor → analyst_agent（分析）→ supervisor → data_agent（再补数据）→ supervisor → writer_agent → supervisor → END
+并且 data_agent 内部还自带 ReAct 循环（Agent 内部自己多次调用工具）。
+
+## 4. LLM 调用分布
+
+- V1：LLM 只在`summarize`节点**一次性调用**。
+- V2：**每个 Agent 节点都是 LLM**：
+supervisor、data_agent、analyst_agent、writer_agent 内部都会调用 LLM，多次 LLM 交互，各自承担不同职责。
+
+## 5. 可扩展性
+
+- V1：新增业务分支，需要新增 node、新增 conditional_edge、新增路由函数，改图结构。
+- V2：新增一个子 Agent，只需要：
+  1. add_node 注册 agent
+  2. 在 supervisor 的 prompt 里告诉 LLM 有这个 Agent 可选
+  3. 在条件边的字典增加映射。
+  不需要大量改动整体流转拓扑，适合复杂多变任务。
+
+## 6. 适用场景
+
+- V1：**站会问答，查询固定 3 个指标，以拉取数据为主，轻量问答**，追求低延迟；简单查询走 Fast 链路，仅 burndown 缺失才重试。优点：速度快，可控，可观测；缺点：流程固定，复杂推理弱。
+- V2：**复杂站会分析任务**：需要多次数据查询、多轮分析、撰写报告。任务步骤不固定，LLM 自主规划，适合需要多步骤思考的场景；缺点：多次调用 LLM，耗时更长、成本更高，结果不可控。
+
+# 四、V1 vs V2 对比表格
+
+表格
+
+| 对比项 | V1 旧图 | V2 Supervisor 多 Agent 图 |
+| --- | --- | --- |
+| 架构 | 固定流水线 + 局部分支 | Supervisor 主管 + 多个子 Agent |
+| 节点性质 | 普通业务函数（校验 / 拉工具 / 汇总） | LLM Agent（supervisor/data/analyst/writer） |
+| 路由决策 | 硬编码 Python 判断（missing_fields 等） | LLM (supervisor) 自主决策，输出 next |
+| LLM 调用位置 | 仅 summarize 一次 LLM | supervisor、各个子 Agent 都会调用 LLM，多轮 |
+| 循环范围 | 仅 burndown 重试局部循环 | 全局循环，子 Agent 完成回到主管，反复调度 |
+| 工具调用 | 集中在 fetch_core_tools，工具调用逻辑硬编码 | data_agent 内部 ReAct，Agent 自主调用工具 |
+| 性能 | 延迟低，LLM 调用次数少 | 多次 LLM 调用，延迟更高，token 消耗更大 |
+| 灵活性 | 弱，流程写死，新增逻辑要改图 | 强，大模型自主规划，适配多变任务 |
+
+# 五、业务取舍
+
+- 如果站会问答只是**查询固定指标，简单返回结果**，用 V1，足够，成本低，稳定可控。
+- 如果站会问答需要**深度分析、多次补充查询、生成复杂报告**，需要 LLM 自己规划任务顺序，用 V2 多 Agent 版本。
+
+# 补充：ReAct 说明
+
+>
+> `data_agent (ReAct循环)`：ReAct=Reason+Act，Agent 自己循环：思考 (LLM) → 调用工具 → 拿到观察结果 → 再思考，直到数据足够。
+> V1 是外部写死重试；V2 的 data_agent 内部，是 Agent 自己决定要不要继续调用工具。
+
+如果你需要，我可以把 V1 和 V2 两张图合并画在一张 Mermaid 图方便对比。

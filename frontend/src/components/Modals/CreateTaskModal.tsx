@@ -180,24 +180,34 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
         >
           <Input placeholder={t('task.titlePlaceholder')} />
         </Form.Item>
-        <Form.Item name="description" label={t('task.description')}>
-          <Space direction="vertical" style={{ width: '100%' }} size={8}>
+        <Form.Item label={t('task.description')}>
+        <Space direction="vertical" style={{ width: '100%' }} size={8}>
             <Button
               onClick={handleGenerateDescription}
               loading={generateDescriptionMutation.isPending}
             >
               {t('task.ai.generateButton')}
             </Button>
-            <Input.TextArea rows={4} placeholder={t('task.descriptionPlaceholder')} />
-            {similarTasks.length > 0 && (
-              <Typography.Text type="secondary">
-                {t('task.ai.similarTasksHint', {
-                  tasks: similarTasks.map((task) => `${task.taskKey} ${task.title}`).join('；'),
-                })}
-              </Typography.Text>
-            )}
           </Space>
         </Form.Item>
+
+
+          <Form.Item name="description" label={null}>
+             <Input.TextArea rows={4} placeholder={t('task.descriptionPlaceholder')} />
+          </Form.Item>
+
+
+
+
+          {similarTasks.length > 0 && (
+        <Form.Item label={null}>
+                <Typography.Text type="secondary">
+                   {t('task.ai.similarTasksHint', {
+                     tasks: similarTasks.map((task) => `${task.taskKey} ${task.title}`).join('；'),
+                    })}
+                  </Typography.Text>
+                </Form.Item>
+          )}
         <Form.Item
           name="type"
           label={t('task.type')}
