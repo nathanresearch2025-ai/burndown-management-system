@@ -21,12 +21,28 @@ export interface CreateSprintRequest {
   totalCapacity?: number
 }
 
+export interface SprintCompletionPrediction {
+  probability: number
+  riskLevel: 'GREEN' | 'YELLOW' | 'RED'
+  featureSummary: {
+    daysElapsedRatio: number
+    remainingRatio: number
+    velocityCurrent: number
+    velocityAvg: number
+    projectedCompletionRatio: number
+    blockedStories: number
+    attendanceRate: number
+  }
+  predictedAt: number
+}
+
 export const sprintApi = {
   getByProject: (projectId: number) => api.get<Sprint[]>(`/sprints/project/${projectId}`),
   getById: (id: number) => api.get<Sprint>(`/sprints/${id}`),
   create: (data: CreateSprintRequest) => api.post<Sprint>('/sprints', data),
   start: (id: number) => api.post<Sprint>(`/sprints/${id}/start`),
   complete: (id: number) => api.post<Sprint>(`/sprints/${id}/complete`),
+  getCompletionProbability: (id: number) => api.get<SprintCompletionPrediction>(`/sprints/${id}/completion-probability`),
 }
 
 export const getSprints = async (projectId: number) => {
