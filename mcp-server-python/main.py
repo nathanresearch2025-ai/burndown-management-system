@@ -43,6 +43,10 @@ from prompts.standup import register_prompts
 
 
 async def main():
+
+    "MCP 不是 “给大模型 Client 直接提供本地 API 调用”，而是：**MCP Server 作为独立进程，"
+    "(对外暴露能力；MCP Client（大模型端）通过标准协议，去请求 MCP Server，由 MCP Server 代为执行 API / 本地文件 / 命令等操作**。)"
+
     backend_url = os.getenv("BACKEND_URL", "http://localhost:8080/api/v1")
     username = os.getenv("BACKEND_USERNAME", "")
     password = os.getenv("BACKEND_PASSWORD", "")
